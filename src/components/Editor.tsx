@@ -1,8 +1,9 @@
 import isHotkey from 'is-hotkey'
-import { type KeyboardEvent, useCallback, useMemo } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useMemo } from 'react'
 import {
-    type Descendant,
     createEditor,
+    type Descendant,
+    Node,
 } from 'slate'
 import { withHistory } from 'slate-history'
 import {
@@ -45,6 +46,21 @@ const RichTextExample = ({ value, onChange }: EditorProps) => {
     )
     const editor = useMemo(() => withShortcuts(withHistory(withReact(createEditor()))), [])
 
+    // Scroll to hash on load/update
+    useEffect(() => {
+        const hash = window.location.hash
+        if (hash) {
+            // Short timeout to ensure DOM is ready
+            setTimeout(() => {
+                const id = hash.substring(1)
+                const element = document.getElementById(id)
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' })
+                }
+            }, 100)
+        }
+    }, [value]) // Re-run when value changes (content loaded)
+
     return (
         <Slate
             editor={editor}
@@ -82,6 +98,12 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
     if (isAlignElement(element)) {
         style.textAlign = element.align as AlignType
     }
+
+    const getId = () => {
+        // Simple ID generation matching TOC logic
+        return Node.string(element).toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')
+    }
+
     switch (element.type) {
         case 'block-quote':
             return (
@@ -97,13 +119,13 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
             )
         case 'heading-one':
             return (
-                <h1 style={style} {...attributes} className="text-4xl font-extrabold mt-6 mb-4">
+                <h1 id={getId()} style={style} {...attributes} className="text-4xl font-extrabold mt-6 mb-4">
                     {children}
                 </h1>
             )
         case 'heading-two':
             return (
-                <h2 style={style} {...attributes} className="text-3xl font-bold mt-4 mb-2">
+                <h2 id={getId()} style={style} {...attributes} className="text-3xl font-bold mt-4 mb-2">
                     {children}
                 </h2>
             )

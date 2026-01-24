@@ -26,10 +26,15 @@ function App() {
           const fileList = await listFiles(handle);
           setFiles(fileList);
 
-          // Try to restore last file
+          // Try to restore last file from URL or Storage
+          const params = new URLSearchParams(window.location.search);
+          const fileParam = params.get('file');
           const lastFileName = await loadLastFile();
-          if (lastFileName) {
-            const fileToRestore = fileList.find(f => f.name === lastFileName);
+
+          const fileToOpenName = fileParam || lastFileName;
+
+          if (fileToOpenName) {
+            const fileToRestore = fileList.find(f => f.name === fileToOpenName);
             if (fileToRestore) {
               const content = await readFile(fileToRestore);
               setEditorContent(deserialize(content));
@@ -64,6 +69,11 @@ function App() {
     setEditorContent(nodes)
     setCurrentFile(file)
     await saveLastFile(file.name)
+
+    // Update URL
+    const url = new URL(window.location.href);
+    url.searchParams.set('file', file.name);
+    window.history.replaceState(null, '', url.toString());
   }
 
   const handleCreateFile = async () => {
