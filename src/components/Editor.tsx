@@ -36,7 +36,7 @@ interface EditorProps {
     onChange: (value: Descendant[]) => void
 }
 
-const RichTextExample = ({ value, onChange }: EditorProps) => {
+const Editor = ({ value, onChange }: EditorProps) => {
     const renderElement = useCallback(
         (props: RenderElementProps) => <Element {...props} />,
         []
@@ -195,4 +195,4 @@ const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
     return <span {...attributes}>{children}</span>
 }
 
-export default RichTextExample
+export default Editor

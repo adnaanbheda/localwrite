@@ -1,5 +1,5 @@
 import { FileText, List } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
@@ -98,16 +98,19 @@ function App() {
     }
   }
 
-  const handleEditorChange = useCallback(async (value: Descendant[]) => {
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleEditorChange = useCallback((value: Descendant[]) => {
     if (!currentFile) return;
 
-    // Debounce or just save? For simplicity, save on every change (might be slow for large files)
-    // Ideally use a debounced save.
-    // Let's implement a simple debounce here? 
-    // Actually, relying on state update frequency might be okay for local MVP. 
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
-    const markdown = serialize(value);
-    await writeFile(currentFile, markdown);
+    saveTimeoutRef.current = setTimeout(async () => {
+      const markdown = serialize(value);
+      await writeFile(currentFile, markdown);
+    }, 1000);
   }, [currentFile]);
 
   return (
