@@ -70,4 +70,67 @@
   --destructive: #e63946;
   --destructive-foreground: #fff;
   --border: #3a3a3a;
+  --border: #3a3a3a;
+}
+
+@layer components {
+  .sidebar-container {
+    @apply sticky top-0 h-screen w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex;
+  }
+
+  .sidebar-toggle-group {
+    @apply flex items-center gap-1 mb-4 bg-secondary/50 border border-border p-1 rounded-md;
+  }
+
+  .sidebar-toggle-btn {
+    @apply flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-sm transition-colors;
+  }
+
+  .sidebar-toggle-btn-active {
+    @apply bg-background shadow-sm text-foreground;
+  }
+
+  .sidebar-toggle-btn-inactive {
+    @apply text-muted-foreground hover:text-foreground;
+  }
+
+  .editor-container {
+    @apply w-full max-w-[850px] py-12 px-4 sm:px-6 lg:px-8;
+  }
+
+  .editor-wrapper {
+    @apply border border-border rounded-lg overflow-hidden bg-background shadow-sm;
+  }
+
+  .settings-container {
+    @apply relative;
+  }
+
+  .settings-popup {
+    @apply absolute bottom-full left-0 mb-2 w-56 rounded-md border border-border bg-card p-4 shadow-lg text-sm;
+  }
+
+  .settings-button {
+    @apply flex w-full items-center gap-2 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted text-foreground;
+  }
+
+  .settings-action-button {
+    @apply w-full justify-start text-left text-xs bg-secondary/50 hover:bg-accent hover:text-accent-foreground p-2 rounded border border-border transition-colors truncate;
+  }
+
+  .theme-toggle-group {
+    @apply flex bg-secondary/50 rounded-md border border-border p-1;
+  }
+
+  .theme-toggle-btn {
+    @apply flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors;
+  }
+
+  .theme-toggle-btn-active {
+    @apply bg-background shadow-sm text-foreground;
+  }
+
+  .theme-toggle-btn-inactive {
+    @apply text-muted-foreground hover:text-foreground;
+  }
 }

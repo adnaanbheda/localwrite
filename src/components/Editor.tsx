@@ -51,7 +51,7 @@ const RichTextExample = ({ value, onChange }: EditorProps) => {
             initialValue={value}
             onChange={onChange}
         >
-            <div className="border border-border rounded-lg overflow-hidden bg-background shadow-sm">
+            <div className="editor-wrapper">
                 <Toolbar />
                 <div className="p-4 min-h-[300px]">
                     <Editable

@@ -24,11 +24,10 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
             document.removeEventListener('mousedown', handleClickOutside)
         }
     }, [])
-
     return (
-        <div className="relative" ref={containerRef}>
+        <div className="settings-container" ref={containerRef}>
             {isOpen && (
-                <div className="absolute bottom-full left-0 mb-2 w-56 rounded-md border border-border bg-card p-4 shadow-lg text-sm">
+                <div className="settings-popup">
                     <h4 className="mb-2 font-medium leading-none text-foreground">Settings</h4>
                     <p className="text-muted-foreground mb-4">Manage your preferences.</p>
 
@@ -37,7 +36,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                             <label className="text-xs font-medium leading-none">Local Storage</label>
                             <button
                                 onClick={onSetFolder}
-                                className="w-full justify-start text-left text-xs bg-secondary/50 hover:bg-accent hover:text-accent-foreground p-2 rounded border border-input transition-colors truncat"
+                                className="settings-action-button"
                             >
                                 {folderName ? `Using: ${folderName}` : "Set Content Folder"}
                             </button>
@@ -45,24 +44,24 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
 
                         <div className="space-y-2">
                             <label className="text-xs font-medium leading-none">Appearance</label>
-                            <div className="flex bg-secondary/50 rounded-md border border-input p-1">
+                            <div className="theme-toggle-group">
                                 <button
                                     onClick={() => setTheme("light")}
-                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'light' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`theme-toggle-btn ${theme === 'light' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
                                     title="Light"
                                 >
                                     <Sun className="w-3 h-3" />
                                 </button>
                                 <button
                                     onClick={() => setTheme("dark")}
-                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'dark' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`theme-toggle-btn ${theme === 'dark' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
                                     title="Dark"
                                 >
                                     <Moon className="w-3 h-3" />
                                 </button>
                                 <button
                                     onClick={() => setTheme("system")}
-                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'system' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    className={`theme-toggle-btn ${theme === 'system' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
                                     title="System"
                                 >
                                     <Monitor className="w-3 h-3" />
@@ -82,7 +81,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
 
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex w-full items-center gap-2 rounded-md p-2 text-sm font-medium transition-colors hover:bg-muted text-foreground"
+                className="settings-button"
             >
                 <SettingsIcon className="h-4 w-4" />
                 Settings

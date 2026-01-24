@@ -101,3 +101,11 @@ export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle) {
 export async function loadDirectoryHandle(): Promise<FileSystemDirectoryHandle | undefined> {
     return await get('localwrite-dir-handle');
 }
+
+export async function saveLastFile(fileName: string) {
+    await set('localwrite-last-file', fileName);
+}
+
+export async function loadLastFile(): Promise<string | undefined> {
+    return await get('localwrite-last-file');
+}

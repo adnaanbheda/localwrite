@@ -1,10 +1,12 @@
+import { FileText, List } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
+import { TableOfContents } from './components/retroui/TableOfContents'
 import { Settings } from './components/Settings'
 import { deserialize, serialize } from './lib/markdown'
-import { getDirectoryHandle, listFiles, loadDirectoryHandle, readFile, saveDirectoryHandle, verifyPermission, writeFile } from './lib/storage'
+import { getDirectoryHandle, listFiles, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, verifyPermission, writeFile } from './lib/storage'
 
 function App() {
   const [files, setFiles] = useState<FileSystemFileHandle[]>([])
@@ -12,6 +14,7 @@ function App() {
   const [folderName, setFolderName] = useState<string | null>(null)
   const [editorContent, setEditorContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] }])
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'outline'>('files')
 
   useEffect(() => {
     async function init() {
@@ -22,6 +25,17 @@ function App() {
           setFolderName(handle.name);
           const fileList = await listFiles(handle);
           setFiles(fileList);
+
+          // Try to restore last file
+          const lastFileName = await loadLastFile();
+          if (lastFileName) {
+            const fileToRestore = fileList.find(f => f.name === lastFileName);
+            if (fileToRestore) {
+              const content = await readFile(fileToRestore);
+              setEditorContent(deserialize(content));
+              setCurrentFile(fileToRestore);
+            }
+          }
         }
       }
     }
@@ -49,6 +63,7 @@ function App() {
     const nodes = deserialize(content)
     setEditorContent(nodes)
     setCurrentFile(file)
+    await saveLastFile(file.name)
   }
 
   const handleCreateFile = async () => {
@@ -87,15 +102,46 @@ function App() {
 
   return (
     <div className="flex min-h-screen w-full bg-background">
-      <div className="sticky top-0 h-screen w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex">
-        <div className="flex-grow overflow-y-auto mb-4">
+      <div className="sidebar-container">
+        <div className="flex-grow overflow-y-auto mb-4 flex flex-col">
           {dirHandle ? (
-            <FileExplorer
-              files={files}
-              onSelectFile={handleSelectFile}
-              onCreateFile={handleCreateFile}
-              currentFile={currentFile}
-            />
+            <>
+              <div className="sidebar-toggle-group">
+                <button
+                  onClick={() => setSidebarTab('files')}
+                  className={`sidebar-toggle-btn ${sidebarTab === 'files'
+                    ? 'sidebar-toggle-btn-active'
+                    : 'sidebar-toggle-btn-inactive'
+                    }`}
+                >
+                  <FileText className="w-3 h-3" />
+                  Files
+                </button>
+                <button
+                  onClick={() => setSidebarTab('outline')}
+                  className={`sidebar-toggle-btn ${sidebarTab === 'outline'
+                    ? 'sidebar-toggle-btn-active'
+                    : 'sidebar-toggle-btn-inactive'
+                    }`}
+                >
+                  <List className="w-3 h-3" />
+                  Outline
+                </button>
+              </div>
+
+              {sidebarTab === 'files' ? (
+                <FileExplorer
+                  files={files}
+                  onSelectFile={handleSelectFile}
+                  onCreateFile={handleCreateFile}
+                  currentFile={currentFile}
+                />
+              ) : (
+                <div className="h-full overflow-y-auto pr-2">
+                  <TableOfContents />
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-sm text-muted-foreground">
               Select a folder in Settings to see files.
@@ -105,7 +151,7 @@ function App() {
         <Settings onSetFolder={handleSetFolder} folderName={folderName} />
       </div>
       <main className="flex-1 flex flex-col items-center">
-        <div className="w-full max-w-[850px] py-12 px-4 sm:px-6 lg:px-8">
+        <div className="editor-container">
           <Editor
             value={editorContent}
             onChange={handleEditorChange}
