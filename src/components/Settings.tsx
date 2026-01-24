@@ -35,7 +35,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                             <label className="text-xs font-medium leading-none">Local Storage</label>
                             <button
                                 onClick={onSetFolder}
-                                className="w-full justify-start text-left text-xs bg-secondary/50 hover:bg-secondary p-2 rounded border border-input transition-colors truncat"
+                                className="w-full justify-start text-left text-xs bg-secondary/50 hover:bg-accent hover:text-accent-foreground p-2 rounded border border-input transition-colors truncat"
                             >
                                 {folderName ? `Using: ${folderName}` : "Set Content Folder"}
                             </button>
