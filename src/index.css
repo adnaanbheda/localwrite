@@ -79,7 +79,7 @@
   }
 
   .sidebar-toggle-group {
-    @apply flex items-center gap-1 mb-4 bg-secondary/50 border border-border p-1 rounded-md;
+    @apply flex items-center gap-1 mb-4 bg-secondary/20 border border-border p-1 rounded-md;
   }
 
   .sidebar-toggle-btn {
