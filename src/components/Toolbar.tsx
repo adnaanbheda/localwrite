@@ -20,7 +20,7 @@ import { ToggleGroup, ToggleGroupItem } from './retroui/ToggleGroup'
 
 const Toolbar = () => {
     return (
-        <div className="border-b border-border p-2 flex flex-wrap gap-2 items-center bg-background sticky top-0 z-10">
+        <div className="border-b border-border p-2 flex flex-nowrap gap-2 items-center bg-background sticky top-0 z-10 overflow-x-auto no-scrollbar">
             <MarkToggleGroup />
             <div className="w-px h-6 bg-border mx-1" />
             <BlockToggleGroup />

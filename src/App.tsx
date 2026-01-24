@@ -1,4 +1,4 @@
-import { FileText, History, List } from 'lucide-react'
+import { FileText, History, List, Menu, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
@@ -9,6 +9,7 @@ import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
 import { deserialize, serialize } from './lib/markdown'
 import { getDirectoryHandle, getVersionHistoryEnabled, listFiles, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, setVersionHistoryEnabled, verifyPermission, writeFile } from './lib/storage'
+import { cn } from './lib/utils'
 
 function App() {
   const [files, setFiles] = useState<FileSystemFileHandle[]>([])
@@ -18,6 +19,7 @@ function App() {
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
   const [historyEnabled, setHistoryEnabledState] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -66,6 +68,7 @@ function App() {
 
   const handleSelectFile = async (file: FileSystemFileHandle) => {
     if (file === currentFile) return
+    setIsMobileMenuOpen(false)
 
     // Verify permission for read/write on the specific file if needed, 
     // but usually directory permission covers it.
@@ -141,66 +144,67 @@ function App() {
     if (currentFile) {
       await writeFile(currentFile, content);
     }
+    setIsMobileMenuOpen(false)
   }
 
-  return (
-    <div className="flex min-h-screen w-full bg-background">
-      <div className="sidebar-container">
-        <div className="flex-grow overflow-y-auto mb-4 flex flex-col">
-          {dirHandle ? (
-            <>
-              <ToggleGroup
-                type="single"
-                value={sidebarTab}
-                onValueChange={(val) => {
-                  if (val) setSidebarTab(val as any);
-                }}
-                className="flex flex-col items-stretch gap-1 mb-6 p-0 border-none bg-transparent"
-                variant="outlined"
-                size="default"
-              >
-                <ToggleGroupItem value="files" className="justify-start px-3" aria-label="Files">
-                  <FileText className="w-4 h-4 mr-3" />
-                  Files
+  const SidebarContent = () => (
+    <>
+      <div className="flex-grow overflow-y-auto mb-4 flex flex-col no-scrollbar">
+        {dirHandle ? (
+          <>
+            <ToggleGroup
+              type="single"
+              value={sidebarTab}
+              onValueChange={(val) => {
+                if (val) setSidebarTab(val as any);
+              }}
+              className="flex flex-col items-stretch gap-1 mb-6 p-0 border-none bg-transparent"
+              variant="outlined"
+              size="default"
+            >
+              <ToggleGroupItem value="files" className="justify-start px-3" aria-label="Files">
+                <FileText className="w-4 h-4 mr-3" />
+                Files
+              </ToggleGroupItem>
+              <ToggleGroupItem value="outline" className="justify-start px-3" aria-label="Outline">
+                <List className="w-4 h-4 mr-3" />
+                Outline
+              </ToggleGroupItem>
+              {historyEnabled && (
+                <ToggleGroupItem value="history" className="justify-start px-3" aria-label="History">
+                  <History className="w-4 h-4 mr-3" />
+                  History
                 </ToggleGroupItem>
-                <ToggleGroupItem value="outline" className="justify-start px-3" aria-label="Outline">
-                  <List className="w-4 h-4 mr-3" />
-                  Outline
-                </ToggleGroupItem>
-                {historyEnabled && (
-                  <ToggleGroupItem value="history" className="justify-start px-3" aria-label="History">
-                    <History className="w-4 h-4 mr-3" />
-                    History
-                  </ToggleGroupItem>
-                )}
-              </ToggleGroup>
-
-              {sidebarTab === 'files' ? (
-                <FileExplorer
-                  files={files}
-                  onSelectFile={handleSelectFile}
-                  onCreateFile={handleCreateFile}
-                  currentFile={currentFile}
-                />
-              ) : sidebarTab === 'outline' ? (
-                <div className="h-full overflow-y-auto pr-2">
-                  <TableOfContents />
-                </div>
-              ) : (
-                <HistoryPanel
-                  dirHandle={dirHandle}
-                  currentFile={currentFile}
-                  editorContent={editorContent}
-                  onRestore={handleRestoreVersion}
-                />
               )}
-            </>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              Select a folder in Settings to see files.
-            </div>
-          )}
-        </div>
+            </ToggleGroup>
+
+            {sidebarTab === 'files' ? (
+              <FileExplorer
+                files={files}
+                onSelectFile={handleSelectFile}
+                onCreateFile={handleCreateFile}
+                currentFile={currentFile}
+              />
+            ) : sidebarTab === 'outline' ? (
+              <div className="h-full overflow-y-auto pr-2">
+                <TableOfContents />
+              </div>
+            ) : (
+              <HistoryPanel
+                dirHandle={dirHandle}
+                currentFile={currentFile}
+                editorContent={editorContent}
+                onRestore={handleRestoreVersion}
+              />
+            )}
+          </>
+        ) : (
+          <div className="text-sm text-muted-foreground p-4 text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
+            Select a folder in Settings to begin your focused writing session.
+          </div>
+        )}
+      </div>
+      <div className="mt-auto pt-6 border-t border-border">
         <Settings
           onSetFolder={handleSetFolder}
           folderName={folderName}
@@ -208,7 +212,64 @@ function App() {
           onToggleHistory={handleToggleHistory}
         />
       </div>
-      <main className="flex-1 flex flex-col items-center">
+    </>
+  )
+
+  return (
+    <div className="flex min-h-screen w-full bg-background flex-col lg:flex-row overflow-x-hidden">
+      {/* Mobile Header */}
+      <header className="mobile-header">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 hover:bg-muted rounded-md transition-colors border border-border"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="font-bold text-lg font-head">LocalWrite</span>
+        </div>
+        {currentFile && (
+          <span className="text-xs font-medium px-2 py-1 bg-primary border-2 border-foreground shadow-[2px_2px_0_0_#000] truncate max-w-[150px]">
+            {currentFile.name}
+          </span>
+        )}
+      </header>
+
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={cn(
+          "mobile-sidebar-overlay",
+          isMobileMenuOpen && "mobile-sidebar-overlay-visible"
+        )}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      {/* Mobile Sidebar */}
+      <div className={cn(
+        "mobile-sidebar",
+        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="flex items-center justify-between mb-8">
+          <span className="font-bold text-xl font-head tracking-tight">Menu</span>
+          <button
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="p-2 hover:bg-muted rounded-md transition-colors border border-border"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <SidebarContent />
+      </div>
+
+      {/* Desktop Sidebar */}
+      <div className="sidebar-container">
+        <div className="mb-8 p-1">
+          <span className="font-bold text-2xl font-head tracking-tighter">LocalWrite</span>
+        </div>
+        <SidebarContent />
+      </div>
+
+      <main className="flex-1 flex flex-col items-center w-full min-w-0">
         <div className="editor-container">
           <Editor
             value={editorContent}

@@ -38,8 +38,22 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
     watch: {
       usePolling: true
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-slate': ['slate', 'slate-react', 'slate-history'],
+          'vendor-ui': ['lucide-react', 'class-variance-authority'],
+        }
+      }
+    },
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 1000
   }
 })

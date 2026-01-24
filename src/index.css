@@ -71,36 +71,44 @@
   --destructive: #e63946;
   --destructive-foreground: #fff;
   --border: #3a3a3a;
-  --border: #3a3a3a;
 }
 
 @layer components {
   .sidebar-container {
-    @apply sticky top-0 h-screen w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex;
+    @apply sticky top-0 h-screen w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex transition-all;
   }
 
-  .sidebar-toggle-group {
-    @apply flex items-center gap-1 mb-4 bg-secondary/20 border border-border p-1 rounded-md;
+  .mobile-header {
+    @apply flex lg:hidden items-center justify-between p-4 border-b border-border bg-background sticky top-0 z-40;
   }
 
-  .sidebar-toggle-btn {
-    @apply flex-1 flex items-center justify-center gap-2 py-1.5 text-xs font-medium rounded-sm transition-colors;
+  .mobile-sidebar-overlay {
+    @apply fixed inset-0 bg-black/50 z-50 lg:hidden backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none;
   }
 
-  .sidebar-toggle-btn-active {
-    @apply bg-background shadow-sm text-foreground;
+  .mobile-sidebar-overlay-visible {
+    @apply opacity-100 pointer-events-auto;
   }
 
-  .sidebar-toggle-btn-inactive {
-    @apply text-muted-foreground hover:text-foreground;
+  .mobile-sidebar {
+    @apply fixed top-0 left-0 bottom-0 w-[280px] bg-card border-r border-border z-[60] lg:hidden shadow-xl p-6 transition-transform duration-300 ease-in-out overflow-y-auto;
+  }
+
+  .mobile-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-sidebar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   .editor-container {
-    @apply w-full max-w-[850px] py-12 px-4 sm:px-6 lg:px-8;
+    @apply w-full max-w-[850px] py-6 sm:py-12 px-4 sm:px-6 lg:px-8 mx-auto;
   }
 
   .editor-wrapper {
-    @apply border border-border rounded-lg overflow-hidden bg-background shadow-sm;
+    @apply border border-border rounded-lg overflow-hidden bg-background shadow-sm w-full;
   }
 
   .settings-container {
