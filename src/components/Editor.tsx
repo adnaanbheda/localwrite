@@ -28,6 +28,7 @@ const HOTKEYS: Record<string, CustomTextKey> = {
     'mod+`': 'code',
 }
 
+import { ContextMenu } from './retroui/ContextMenu'
 import { withShortcuts } from './withShortcuts'
 
 interface EditorProps {
@@ -70,23 +71,47 @@ const RichTextExample = ({ value, onChange }: EditorProps) => {
             <div className="editor-wrapper">
                 <Toolbar />
                 <div className="p-4 min-h-[300px]">
-                    <Editable
-                        renderElement={renderElement}
-                        renderLeaf={renderLeaf}
-                        placeholder="Enter some rich text…"
-                        spellCheck
-                        autoFocus
-                        onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
-                            for (const hotkey in HOTKEYS) {
-                                if (isHotkey(hotkey, event as any)) {
-                                    event.preventDefault()
-                                    const mark = HOTKEYS[hotkey]
-                                    toggleMark(editor, mark)
+                    <ContextMenu>
+                        <ContextMenu.Trigger>
+                            <Editable
+                                renderElement={renderElement}
+                                renderLeaf={renderLeaf}
+                                placeholder="Enter some rich text…"
+                                spellCheck
+                                autoFocus
+                                onKeyDown={(event: KeyboardEvent<HTMLDivElement>) => {
+                                    for (const hotkey in HOTKEYS) {
+                                        if (isHotkey(hotkey, event as any)) {
+                                            event.preventDefault()
+                                            const mark = HOTKEYS[hotkey]
+                                            toggleMark(editor, mark)
+                                        }
+                                    }
+                                }}
+                                className="outline-none"
+                            />
+                        </ContextMenu.Trigger>
+                        <ContextMenu.Content>
+                            <ContextMenu.Item onClick={() => navigator.clipboard.writeText(window.getSelection()?.toString() || '')}>
+                                Copy
+                            </ContextMenu.Item>
+                            <ContextMenu.Item>Cut</ContextMenu.Item>
+                            <ContextMenu.Item onClick={async () => {
+                                try {
+                                    const text = await navigator.clipboard.readText();
+                                    editor.insertText(text);
+                                } catch (err) {
+                                    console.error('Failed to read clipboard contents: ', err);
                                 }
-                            }
-                        }}
-                        className="outline-none"
-                    />
+                            }}>
+                                Paste
+                            </ContextMenu.Item>
+                            <ContextMenu.Separator />
+                            <ContextMenu.Item onClick={() => toggleMark(editor, 'bold')}>Bold</ContextMenu.Item>
+                            <ContextMenu.Item onClick={() => toggleMark(editor, 'italic')}>Italic</ContextMenu.Item>
+                            <ContextMenu.Item onClick={() => toggleMark(editor, 'underline')}>Underline</ContextMenu.Item>
+                        </ContextMenu.Content>
+                    </ContextMenu>
                 </div>
             </div>
         </Slate>
