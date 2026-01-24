@@ -22,7 +22,7 @@ export const withShortcuts = (editor: CustomEditor) => {
 
         if (text === ' ' && selection && Range.isCollapsed(selection)) {
             const { anchor } = selection
-            const block = Editor.above(editor, { match: n => Editor.isBlock(editor, n) }) as any
+            const block = Editor.above(editor, { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }) as any
             const path = block ? block[1] : []
             const start = Editor.start(editor, path)
             const range = { anchor, focus: start }

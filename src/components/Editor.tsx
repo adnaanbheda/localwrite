@@ -95,7 +95,15 @@ const Editor = ({ value, onChange }: EditorProps) => {
                             <ContextMenu.Item onClick={() => navigator.clipboard.writeText(window.getSelection()?.toString() || '')}>
                                 Copy
                             </ContextMenu.Item>
-                            <ContextMenu.Item>Cut</ContextMenu.Item>
+                            <ContextMenu.Item onClick={() => {
+                                const selection = window.getSelection()?.toString()
+                                if (selection) {
+                                    navigator.clipboard.writeText(selection)
+                                    editor.deleteFragment()
+                                }
+                            }}>
+                                Cut
+                            </ContextMenu.Item>
                             <ContextMenu.Item onClick={async () => {
                                 try {
                                     const text = await navigator.clipboard.readText();
