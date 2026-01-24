@@ -1,13 +1,16 @@
 import { Monitor, Moon, Settings as SettingsIcon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from './ThemeProvider'
+import { Switch } from './retroui/Switch'
 
 interface SettingsProps {
     onSetFolder: () => void
     folderName: string | null
+    historyEnabled: boolean
+    onToggleHistory: (enabled: boolean) => void
 }
 
-export function Settings({ onSetFolder, folderName }: SettingsProps) {
+export function Settings({ onSetFolder, folderName, historyEnabled, onToggleHistory }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
@@ -66,6 +69,15 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                                 >
                                     <Monitor className="w-3 h-3" />
                                 </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 pt-2 border-t border-border">
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                    Version History
+                                </label>
+                                <Switch checked={historyEnabled} onCheckedChange={onToggleHistory} />
                             </div>
                         </div>
 
