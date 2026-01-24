@@ -1,12 +1,14 @@
-import { FileText, List } from 'lucide-react'
+import { FileText, History, List } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
+import { HistoryPanel } from './components/HistoryPanel'
 import { TableOfContents } from './components/retroui/TableOfContents'
+import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
 import { deserialize, serialize } from './lib/markdown'
-import { getDirectoryHandle, listFiles, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, verifyPermission, writeFile } from './lib/storage'
+import { getDirectoryHandle, getVersionHistoryEnabled, listFiles, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, setVersionHistoryEnabled, verifyPermission, writeFile } from './lib/storage'
 
 function App() {
   const [files, setFiles] = useState<FileSystemFileHandle[]>([])
@@ -14,10 +16,14 @@ function App() {
   const [folderName, setFolderName] = useState<string | null>(null)
   const [editorContent, setEditorContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] }])
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
-  const [sidebarTab, setSidebarTab] = useState<'files' | 'outline'>('files')
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
+  const [historyEnabled, setHistoryEnabledState] = useState(false)
 
   useEffect(() => {
     async function init() {
+      const enabled = await getVersionHistoryEnabled()
+      setHistoryEnabledState(enabled)
+
       const handle = await loadDirectoryHandle();
       if (handle) {
         if (await verifyPermission(handle, false)) {
@@ -101,6 +107,13 @@ function App() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleEditorChange = useCallback((value: Descendant[]) => {
+    setEditorContent(value); // Sync local state for HistoryPanel access
+
+    // Switch to outline tab when editing if currently on files tab
+    if (sidebarTab === 'files') {
+      setSidebarTab('outline');
+    }
+
     if (!currentFile) return;
 
     if (saveTimeoutRef.current) {
@@ -111,7 +124,24 @@ function App() {
       const markdown = serialize(value);
       await writeFile(currentFile, markdown);
     }, 1000);
-  }, [currentFile]);
+  }, [currentFile, sidebarTab]);
+
+  const handleToggleHistory = async (enabled: boolean) => {
+    setHistoryEnabledState(enabled)
+    await setVersionHistoryEnabled(enabled)
+    if (!enabled && sidebarTab === 'history') {
+      setSidebarTab('files')
+    }
+  }
+
+  const handleRestoreVersion = async (content: string) => {
+    const nodes = deserialize(content);
+    setEditorContent(nodes);
+    // Also save to disk immediately so file system is in sync
+    if (currentFile) {
+      await writeFile(currentFile, content);
+    }
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -119,28 +149,31 @@ function App() {
         <div className="flex-grow overflow-y-auto mb-4 flex flex-col">
           {dirHandle ? (
             <>
-              <div className="sidebar-toggle-group">
-                <button
-                  onClick={() => setSidebarTab('files')}
-                  className={`sidebar-toggle-btn ${sidebarTab === 'files'
-                    ? 'sidebar-toggle-btn-active'
-                    : 'sidebar-toggle-btn-inactive'
-                    }`}
-                >
-                  <FileText className="w-3 h-3" />
+              <ToggleGroup
+                type="single"
+                value={sidebarTab}
+                onValueChange={(val) => {
+                  if (val) setSidebarTab(val as any);
+                }}
+                className="flex flex-col items-stretch gap-1 mb-6 p-0 border-none bg-transparent"
+                variant="outlined"
+                size="default"
+              >
+                <ToggleGroupItem value="files" className="justify-start px-3" aria-label="Files">
+                  <FileText className="w-4 h-4 mr-3" />
                   Files
-                </button>
-                <button
-                  onClick={() => setSidebarTab('outline')}
-                  className={`sidebar-toggle-btn ${sidebarTab === 'outline'
-                    ? 'sidebar-toggle-btn-active'
-                    : 'sidebar-toggle-btn-inactive'
-                    }`}
-                >
-                  <List className="w-3 h-3" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="outline" className="justify-start px-3" aria-label="Outline">
+                  <List className="w-4 h-4 mr-3" />
                   Outline
-                </button>
-              </div>
+                </ToggleGroupItem>
+                {historyEnabled && (
+                  <ToggleGroupItem value="history" className="justify-start px-3" aria-label="History">
+                    <History className="w-4 h-4 mr-3" />
+                    History
+                  </ToggleGroupItem>
+                )}
+              </ToggleGroup>
 
               {sidebarTab === 'files' ? (
                 <FileExplorer
@@ -149,10 +182,17 @@ function App() {
                   onCreateFile={handleCreateFile}
                   currentFile={currentFile}
                 />
-              ) : (
+              ) : sidebarTab === 'outline' ? (
                 <div className="h-full overflow-y-auto pr-2">
                   <TableOfContents />
                 </div>
+              ) : (
+                <HistoryPanel
+                  dirHandle={dirHandle}
+                  currentFile={currentFile}
+                  editorContent={editorContent}
+                  onRestore={handleRestoreVersion}
+                />
               )}
             </>
           ) : (
@@ -161,7 +201,12 @@ function App() {
             </div>
           )}
         </div>
-        <Settings onSetFolder={handleSetFolder} folderName={folderName} />
+        <Settings
+          onSetFolder={handleSetFolder}
+          folderName={folderName}
+          historyEnabled={historyEnabled}
+          onToggleHistory={handleToggleHistory}
+        />
       </div>
       <main className="flex-1 flex flex-col items-center">
         <div className="editor-container">
