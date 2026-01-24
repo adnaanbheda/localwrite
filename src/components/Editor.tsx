@@ -107,25 +107,25 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
     switch (element.type) {
         case 'block-quote':
             return (
-                <blockquote style={style} {...attributes}>
+                <blockquote style={style} {...attributes} className="element-blockquote">
                     {children}
                 </blockquote>
             )
         case 'bulleted-list':
             return (
-                <ul style={style} {...attributes} className="list-disc pl-5">
+                <ul style={style} {...attributes} className="element-ul">
                     {children}
                 </ul>
             )
         case 'heading-one':
             return (
-                <h1 id={getId()} style={style} {...attributes} className="text-4xl font-extrabold mt-6 mb-4">
+                <h1 id={getId()} style={style} {...attributes} className="element-h1">
                     {children}
                 </h1>
             )
         case 'heading-two':
             return (
-                <h2 id={getId()} style={style} {...attributes} className="text-3xl font-bold mt-4 mb-2">
+                <h2 id={getId()} style={style} {...attributes} className="element-h2">
                     {children}
                 </h2>
             )
@@ -137,7 +137,7 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
             )
         case 'numbered-list':
             return (
-                <ol style={style} {...attributes} className="list-decimal pl-5">
+                <ol style={style} {...attributes} className="element-ol">
                     {children}
                 </ol>
             )
