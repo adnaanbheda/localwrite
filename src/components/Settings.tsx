@@ -1,5 +1,6 @@
-import { Settings as SettingsIcon } from 'lucide-react'
+import { Monitor, Moon, Settings as SettingsIcon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useTheme } from './ThemeProvider'
 
 interface SettingsProps {
     onSetFolder: () => void
@@ -9,6 +10,7 @@ interface SettingsProps {
 export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
+    const { theme, setTheme } = useTheme()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -41,11 +43,34 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                             </button>
                         </div>
 
-                        <div className="space-y-2 pt-2 border-t border-border">
-                            <div className="flex items-center justify-between">
-                                <span className="text-foreground">Appearance</span>
-                                <span className="text-xs text-muted-foreground">Default</span>
+                        <div className="space-y-2">
+                            <label className="text-xs font-medium leading-none">Appearance</label>
+                            <div className="flex bg-secondary/50 rounded-md border border-input p-1">
+                                <button
+                                    onClick={() => setTheme("light")}
+                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'light' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="Light"
+                                >
+                                    <Sun className="w-3 h-3" />
+                                </button>
+                                <button
+                                    onClick={() => setTheme("dark")}
+                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'dark' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="Dark"
+                                >
+                                    <Moon className="w-3 h-3" />
+                                </button>
+                                <button
+                                    onClick={() => setTheme("system")}
+                                    className={`flex-1 flex justify-center p-1 rounded-sm text-xs transition-colors ${theme === 'system' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                                    title="System"
+                                >
+                                    <Monitor className="w-3 h-3" />
+                                </button>
                             </div>
+                        </div>
+
+                        <div className="space-y-2 pt-2 border-t border-border">
                             <div className="flex items-center justify-between">
                                 <span className="text-foreground">About</span>
                                 <span className="text-xs text-muted-foreground">v0.1.0</span>
