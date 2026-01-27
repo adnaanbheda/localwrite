@@ -1,14 +1,26 @@
 # LocalWrite
 
-A modern, minimalist rich text editor built with React, TypeScript, and Slate.js.
+A **local-first** rich text editor for personal notes and writing. Your data stays on your device—no servers, no sync, no tracking.
+
+## Philosophy
+
+LocalWrite isn't trying to compete with powerful editors like Obsidian or Google Docs. Instead, it's built for quick, personal writing where **privacy and simplicity matter most**. 
+
+Perfect for:
+- Quick notes and thoughts
+- Personal journaling
+- Draft writing
+- Anything you want to keep completely private and local
 
 ## Features
 
-- **Rich Text Editing**: Full-featured text editor with support for bold, italic, underline, and more
-- **Local Storage**: Automatically saves your work locally in your browser
-- **Modern UI**: Clean, intuitive interface built with Tailwind CSS
-- **Keyboard Shortcuts**: Efficient editing with familiar keyboard shortcuts
-- **Context Menu**: Right-click context menu for quick formatting options
+- **100% Local**: Everything stays in your browser—no data ever leaves your device
+- **Privacy First**: No accounts, no servers, no tracking, no data collection
+- **Instant Access**: Just open and write—no setup, no configuration
+- **Rich Text Support**: Basic formatting (bold, italic, underline) for readable notes
+- **Auto-Save**: Your work saves automatically to browser storage
+- **Keyboard Shortcuts**: Efficient editing with familiar shortcuts
+- **Clean Interface**: Distraction-free writing experience
 
 ## Tech Stack
 
