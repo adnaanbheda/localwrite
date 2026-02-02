@@ -92,11 +92,10 @@ export type ParagraphElement = {
     children: Descendant[]
 }
 
-// export type TableElement = { type: 'table'; children: TableRow[] }
 
-// export type TableCellElement = { type: 'table-cell'; children: CustomText[] }
-
-// export type TableRowElement = { type: 'table-row'; children: TableCell[] }
+export type TableElement = { type: 'table'; children: TableRowElement[] }
+export type TableRowElement = { type: 'table-row'; children: TableCellElement[] }
+export type TableCellElement = { type: 'table-cell'; children: Descendant[] }
 
 export type TitleElement = { type: 'title'; children: Descendant[] }
 
@@ -143,9 +142,9 @@ export type CustomElement =
     | NumberedListItemElement
     | MentionElement
     | ParagraphElement
-    // | TableElement
-    // | TableRowElement
-    // | TableCellElement
+    | TableElement
+    | TableRowElement
+    | TableCellElement
     | TitleElement
     | VideoElement
     | CodeBlockElement

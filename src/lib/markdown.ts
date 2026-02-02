@@ -1,4 +1,5 @@
 import { type Descendant, Text } from 'slate'
+import type { TableElement, TableRowElement } from '../components/custom-types'
 
 export function serialize(nodes: Descendant[]): string {
     return nodes.map(n => serializeNode(n)).join('\n')
@@ -17,6 +18,21 @@ function serializeNode(node: Descendant): string {
     const children = node.children.map(n => serializeNode(n)).join('')
 
     switch (node.type) {
+        case 'table':
+            const tableRows = node.children.map(n => serializeNode(n));
+            if (node.children.length > 0) {
+                const firstRow = node.children[0] as any;
+                if (firstRow.children) {
+                    const colCount = firstRow.children.length;
+                    const separator = '| ' + Array(colCount).fill('---').join(' | ') + ' |';
+                    tableRows.splice(1, 0, separator);
+                }
+            }
+            return tableRows.join('\n');
+        case 'table-row':
+            return '| ' + node.children.map(n => serializeNode(n)).join(' | ') + ' |';
+        case 'table-cell':
+            return children;
         case 'block-quote':
             return `> ${children}`
         case 'check-list-item':
@@ -66,7 +82,17 @@ export function deserialize(markdown: string): Descendant[] {
     const lines = markdown.split('\n')
     const nodes: Descendant[] = []
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+
+        // Table detection
+        const tableResult = parseTable(lines, i)
+        if (tableResult) {
+            nodes.push(tableResult.table)
+            i = tableResult.endIndex
+            continue
+        }
+
         if (line.startsWith('# ')) {
             nodes.push({ type: 'heading-one', children: parseInline(line.slice(2)) })
         } else if (line.startsWith('## ')) {
@@ -104,6 +130,46 @@ export function deserialize(markdown: string): Descendant[] {
     }
 
     return nodes
+}
+
+function parseTable(lines: string[], index: number): { table: TableElement, endIndex: number } | null {
+    const line = lines[index]
+    if (!line.trim().startsWith('|') || index + 1 >= lines.length) {
+        return null
+    }
+
+    const nextLine = lines[index + 1].trim()
+    if (!nextLine.match(/^\|?(\s*:?-+:?\s*\|?)+$/)) {
+        return null
+    }
+
+    const rows: TableRowElement[] = []
+    rows.push(parseTableRow(line))
+
+    let i = index + 1
+    while (i + 1 < lines.length && lines[i + 1].trim().startsWith('|')) {
+        i++
+        rows.push(parseTableRow(lines[i]))
+    }
+
+    return {
+        table: { type: 'table', children: rows },
+        endIndex: i
+    }
+}
+
+function parseTableRow(line: string): TableRowElement {
+    // Remove leading/trailing pipes if present to avoid empty start/end cells
+    const trimmed = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+    const cells = trimmed.split('|').map(c => c.trim());
+
+    return {
+        type: 'table-row',
+        children: cells.map(cell => ({
+            type: 'table-cell',
+            children: parseInline(cell)
+        }))
+    }
 }
 
 function parseInline(text: string): { text: string; bold?: boolean; italic?: boolean; code?: boolean; underline?: boolean }[] {
