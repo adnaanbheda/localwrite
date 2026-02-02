@@ -19,6 +19,8 @@ function serializeNode(node: Descendant): string {
     switch (node.type) {
         case 'block-quote':
             return `> ${children}`
+        case 'check-list-item':
+            return `- [${node.checked ? 'x' : ' '}] ${children}`
         case 'heading-one':
             return `# ${children}`
         case 'heading-two':
@@ -69,8 +71,17 @@ export function deserialize(markdown: string): Descendant[] {
             nodes.push({ type: 'heading-one', children: parseInline(line.slice(2)) })
         } else if (line.startsWith('## ')) {
             nodes.push({ type: 'heading-two', children: parseInline(line.slice(3)) })
+        } else if (line.startsWith('### ')) {
+            nodes.push({ type: 'heading-three', children: parseInline(line.slice(4)) })
         } else if (line.startsWith('> ')) {
             nodes.push({ type: 'block-quote', children: parseInline(line.slice(2)) })
+        } else if (line.match(/^[-*] \[[ x]\] /)) {
+            const checked = line.includes('[x]')
+            nodes.push({
+                type: 'check-list-item',
+                checked,
+                children: parseInline(line.replace(/^[-*] \[[ x]\] /, ''))
+            })
         } else if (line.startsWith('- ')) {
             nodes.push({
                 type: 'bulleted-list',

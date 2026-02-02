@@ -75,7 +75,7 @@
 
 @layer components {
   .sidebar-container {
-    @apply sticky top-0 h-screen w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex transition-all;
+    @apply h-full w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex transition-all;
   }
 
   .mobile-header {
