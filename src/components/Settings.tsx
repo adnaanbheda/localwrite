@@ -1,19 +1,25 @@
 import { Monitor, Moon, Settings as SettingsIcon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { usePlugin } from '../contexts/PluginContext'
 import { useTheme } from './ThemeProvider'
 import { Switch } from './retroui/Switch'
 
 interface SettingsProps {
     onSetFolder: () => void
     folderName: string | null
-    historyEnabled: boolean
-    onToggleHistory: (enabled: boolean) => void
 }
 
-export function Settings({ onSetFolder, folderName, historyEnabled, onToggleHistory }: SettingsProps) {
+const Label = ({ children }: { children: React.ReactNode }) => (
+    <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        {children}
+    </label>
+)
+
+export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
+    const { plugins, enablePlugin, disablePlugin, isPluginEnabled } = usePlugin()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -73,11 +79,25 @@ export function Settings({ onSetFolder, folderName, historyEnabled, onToggleHist
                         </div>
 
                         <div className="space-y-4 pt-2 border-t border-border">
-                            <div className="flex items-center justify-between">
-                                <label className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                    Version History
-                                </label>
-                                <Switch checked={historyEnabled} onCheckedChange={onToggleHistory} />
+                            <div className="space-y-2">
+                                <Label>Plugins</Label>
+                                <div className="space-y-2">
+                                    {plugins.map(plugin => (
+                                        <div key={plugin.id} className="flex items-center justify-between p-2 border border-border rounded-md bg-secondary/20">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium">{plugin.name}</span>
+                                                <span className="text-xs text-muted-foreground">{plugin.description}</span>
+                                            </div>
+                                            <Switch
+                                                checked={isPluginEnabled(plugin.id)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) enablePlugin(plugin.id);
+                                                    else disablePlugin(plugin.id);
+                                                }}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

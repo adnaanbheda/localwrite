@@ -1,18 +1,19 @@
-import { FileText, History, List, Menu, X } from 'lucide-react'
+import { FileText, List, Menu, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
-import { HistoryPanel } from './components/HistoryPanel'
 import { TableOfContents } from './components/retroui/TableOfContents'
 import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
+import { usePlugin } from './contexts/PluginContext'
 import { deserialize, serialize } from './lib/markdown'
 import type { FileSystemItem } from './lib/storage'
 import { getDirectoryHandle, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, scanDirectory, verifyPermission, writeFile } from './lib/storage'
 import { cn } from './lib/utils'
 
 function App() {
+  const { plugins, isPluginEnabled } = usePlugin()
   const [items, setItems] = useState<FileSystemItem[]>([])
   const [currentFile, setCurrentFile] = useState<FileSystemFileHandle | null>(null)
 
@@ -31,14 +32,10 @@ function App() {
   const [editorContent, setEditorContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] }])
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
-  const [historyEnabled, setHistoryEnabledState] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     async function init() {
-      const enabled = await getVersionHistoryEnabled()
-      setHistoryEnabledState(enabled)
-
       const handle = await loadDirectoryHandle();
       if (handle) {
         if (await verifyPermission(handle, false)) {
@@ -142,14 +139,6 @@ function App() {
     }, 1000);
   }, [currentFile, sidebarTab]);
 
-  const handleToggleHistory = async (enabled: boolean) => {
-    setHistoryEnabledState(enabled)
-    await setVersionHistoryEnabled(enabled)
-    if (!enabled && sidebarTab === 'history') {
-      setSidebarTab('files')
-    }
-  }
-
   const handleRestoreVersion = async (content: string) => {
     const nodes = deserialize(content);
     setEditorContent(nodes);
@@ -159,6 +148,8 @@ function App() {
     }
     setIsMobileMenuOpen(false)
   }
+
+  // existing state...
 
   const SidebarContent = () => (
     <>
@@ -183,17 +174,17 @@ function App() {
                 <List className="w-4 h-4 mr-3" />
                 Outline
               </ToggleGroupItem>
-              {historyEnabled && (
-                <ToggleGroupItem value="history" className="justify-start px-3" aria-label="History">
-                  <History className="w-4 h-4 mr-3" />
-                  History
+              {plugins.filter(p => isPluginEnabled(p.id) && p.renderSidebarIcon).map(plugin => (
+                <ToggleGroupItem key={plugin.id} value={plugin.id} className="justify-start px-3" aria-label={plugin.name}>
+                  {plugin.renderSidebarIcon!()}
+                  {plugin.name}
                 </ToggleGroupItem>
-              )}
+              ))}
             </ToggleGroup>
 
             {sidebarTab === 'files' ? (
               <FileExplorer
-                files={files}
+                items={items}
                 onSelectFile={handleSelectFile}
                 onCreateFile={handleCreateFile}
                 currentFile={currentFile}
@@ -203,12 +194,19 @@ function App() {
                 <TableOfContents />
               </div>
             ) : (
-              <HistoryPanel
-                dirHandle={dirHandle}
-                currentFile={currentFile}
-                editorContent={editorContent}
-                onRestore={handleRestoreVersion}
-              />
+              // Dynamic plugin rendering
+              (() => {
+                const activePlugin = plugins.find(p => p.id === sidebarTab);
+                if (activePlugin && activePlugin.renderSidebarContent) {
+                  return activePlugin.renderSidebarContent({
+                    dirHandle,
+                    currentFile,
+                    editorContent,
+                    onRestore: handleRestoreVersion
+                  });
+                }
+                return null;
+              })()
             )}
           </>
         ) : (
@@ -221,15 +219,13 @@ function App() {
         <Settings
           onSetFolder={handleSetFolder}
           folderName={folderName}
-          historyEnabled={historyEnabled}
-          onToggleHistory={handleToggleHistory}
         />
       </div>
     </>
   )
 
   return (
-    <div className="flex min-h-screen w-full bg-background flex-col lg:flex-row overflow-x-hidden">
+    <div className="flex h-screen w-full bg-background flex-col lg:flex-row overflow-hidden">
       {/* Mobile Header */}
       <header className="mobile-header">
         <div className="flex items-center gap-3">
@@ -282,7 +278,7 @@ function App() {
         <SidebarContent />
       </div>
 
-      <main className="flex-1 flex flex-col items-center w-full min-w-0">
+      <main className="flex-1 flex flex-col items-center w-full min-w-0 overflow-y-auto">
         <div className="editor-container">
           <Editor
             value={editorContent}
