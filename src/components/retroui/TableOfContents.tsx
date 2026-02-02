@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface TOCItem {
     title: string;
@@ -67,6 +67,7 @@ function renderTOCItems(items: TOCItem[], level = 0, activeId: string | null) {
                     <li key={index}>
                         <a
                             href={item.url}
+                            data-toc-id={item.url.substring(1)}
                             className={`text-sm max-w-full truncate transition-colors block py-1 border-l-2 pl-2 ${isActive
                                 ? 'text-black border-black bg-accent'
                                 : 'border-transparent hover:border-black hover:text-black'
@@ -89,6 +90,7 @@ export function TableOfContents({
 }: TableOfContentsProps) {
     const [tocItems, setTocItems] = useState<TOCItem[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const tocRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const items = generateTOCFromDOM(depth);
@@ -127,13 +129,33 @@ export function TableOfContents({
         return () => observer.disconnect();
     }, []);
 
+    useEffect(() => {
+        if (activeId && tocRef.current) {
+            const activeElement = tocRef.current.querySelector(`[data-toc-id="${activeId}"]`);
+            if (activeElement) {
+                // Check if element is already viewable to avoid unnecessary scrolling
+                const containerRect = tocRef.current.getBoundingClientRect();
+                const elementRect = activeElement.getBoundingClientRect();
+
+                const isVisible = (
+                    elementRect.top >= containerRect.top &&
+                    elementRect.bottom <= containerRect.bottom
+                );
+
+                if (!isVisible) {
+                    activeElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                }
+            }
+        }
+    }, [activeId]);
+
     if (tocItems.length === 0) {
         return null;
     }
 
     return (
-        <div className={cn("w-full", className)}>
-            <h3 className="font-bold text-lg mb-4">Table of Contents</h3>
+        <div ref={tocRef} className={cn("w-full h-full overflow-y-auto max-h-[calc(100vh-200px)]", className)}>
+            <h3 className="font-bold text-lg mb-4 sticky top-0 bg-background z-10 py-2">Table of Contents</h3>
             {children}
             {renderTOCItems(tocItems, 0, activeId)}
         </div>
