@@ -4,14 +4,17 @@ import {
     createEditor,
     type Descendant,
     Node,
+    Transforms
 } from 'slate'
 import { withHistory } from 'slate-history'
 import {
     Editable,
+    ReactEditor,
     type RenderElementProps,
     type RenderLeafProps,
     Slate,
-    withReact,
+    useSlateStatic,
+    withReact
 } from 'slate-react'
 import type {
     AlignType,
@@ -127,6 +130,7 @@ const Editor = ({ value, onChange }: EditorProps) => {
 }
 
 const Element = ({ attributes, children, element }: RenderElementProps) => {
+    const editor = useSlateStatic()
     const style: React.CSSProperties = {}
     if (isAlignElement(element)) {
         style.textAlign = element.align as AlignType
@@ -138,6 +142,28 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
     }
 
     switch (element.type) {
+        case 'check-list-item':
+            return (
+                <div {...attributes} className="flex flex-row items-start space-x-2 my-1">
+                    <span contentEditable={false} className="select-none mt-1">
+                        <input
+                            type="checkbox"
+                            checked={element.checked}
+                            onChange={(event) => {
+                                const path = ReactEditor.findPath(editor, element)
+                                const newProperties: Partial<typeof element> = {
+                                    checked: event.target.checked,
+                                }
+                                Transforms.setNodes(editor, newProperties, { at: path })
+                            }}
+                            className="cursor-pointer"
+                        />
+                    </span>
+                    <span className={element.checked ? 'text-muted-foreground' : ''}>
+                        {children}
+                    </span>
+                </div>
+            )
         case 'block-quote':
             return (
                 <blockquote style={style} {...attributes} className="element-blockquote">
@@ -162,6 +188,12 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
                     {children}
                 </h2>
             )
+        case 'heading-three':
+            return (
+                <h3 id={getId()} style={style} {...attributes} className="element-h3">
+                    {children}
+                </h3>
+            )
         case 'list-item':
             return (
                 <li style={style} {...attributes}>
@@ -173,6 +205,20 @@ const Element = ({ attributes, children, element }: RenderElementProps) => {
                 <ol style={style} {...attributes} className="element-ol">
                     {children}
                 </ol>
+            )
+        case 'table':
+            return (
+                <table className="w-full border-collapse my-4">
+                    <tbody {...attributes}>{children}</tbody>
+                </table>
+            )
+        case 'table-row':
+            return <tr {...attributes}>{children}</tr>
+        case 'table-cell':
+            return (
+                <td {...attributes} className="border border-border p-2 min-w-[50px]">
+                    {children}
+                </td>
             )
         default:
             return (
