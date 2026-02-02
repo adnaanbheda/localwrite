@@ -65,16 +65,33 @@ export async function verifyPermission(
     return false;
 }
 
-export async function listFiles(
+export type FileSystemItem = {
+    name: string;
+    kind: 'file' | 'directory';
+    handle: FileSystemFileHandle | FileSystemDirectoryHandle;
+    children?: FileSystemItem[];
+}
+
+export async function scanDirectory(
     directoryHandle: FileSystemDirectoryHandle
-): Promise<FileSystemFileHandle[]> {
-    const files: FileSystemFileHandle[] = [];
+): Promise<FileSystemItem[]> {
+    const items: FileSystemItem[] = [];
     for await (const entry of directoryHandle.values()) {
-        if (entry.kind === "file" && entry.name.endsWith(".md")) {
-            files.push(entry);
+        if (entry.kind === 'file' && entry.name.endsWith('.md')) {
+            items.push({ name: entry.name, kind: 'file', handle: entry as FileSystemFileHandle });
+        } else if (entry.kind === 'directory' && !['.git', '.history', 'node_modules'].includes(entry.name)) {
+            const children = await scanDirectory(entry as FileSystemDirectoryHandle);
+            // Always add directory if it exists, even if empty? Or only if meaningful?
+            // Let's add it to show structure.
+            items.push({ name: entry.name, kind: 'directory', handle: entry as FileSystemDirectoryHandle, children });
         }
     }
-    return files;
+    // Sort directories first, then files.
+    items.sort((a, b) => {
+        if (a.kind === b.kind) return a.name.localeCompare(b.name);
+        return a.kind === 'directory' ? -1 : 1;
+    });
+    return items;
 }
 
 export async function readFile(fileHandle: FileSystemFileHandle): Promise<string> {

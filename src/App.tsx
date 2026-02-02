@@ -8,12 +8,25 @@ import { TableOfContents } from './components/retroui/TableOfContents'
 import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
 import { deserialize, serialize } from './lib/markdown'
-import { getDirectoryHandle, getVersionHistoryEnabled, listFiles, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, setVersionHistoryEnabled, verifyPermission, writeFile } from './lib/storage'
+import type { FileSystemItem } from './lib/storage'
+import { getDirectoryHandle, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, scanDirectory, verifyPermission, writeFile } from './lib/storage'
 import { cn } from './lib/utils'
 
 function App() {
-  const [files, setFiles] = useState<FileSystemFileHandle[]>([])
+  const [items, setItems] = useState<FileSystemItem[]>([])
   const [currentFile, setCurrentFile] = useState<FileSystemFileHandle | null>(null)
+
+  // Helper to find file in tree
+  const findFileByName = (items: FileSystemItem[], name: string): FileSystemFileHandle | undefined => {
+    for (const item of items) {
+      if (item.kind === 'file' && item.name === name) return item.handle as FileSystemFileHandle;
+      if (item.kind === 'directory' && item.children) {
+        const found = findFileByName(item.children, name);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  }
   const [folderName, setFolderName] = useState<string | null>(null)
   const [editorContent, setEditorContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] }])
   const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
@@ -31,8 +44,8 @@ function App() {
         if (await verifyPermission(handle, false)) {
           setDirHandle(handle);
           setFolderName(handle.name);
-          const fileList = await listFiles(handle);
-          setFiles(fileList);
+          const itemList = await scanDirectory(handle);
+          setItems(itemList);
 
           // Try to restore last file from URL or Storage
           const params = new URLSearchParams(window.location.search);
@@ -42,7 +55,7 @@ function App() {
           const fileToOpenName = fileParam || lastFileName;
 
           if (fileToOpenName) {
-            const fileToRestore = fileList.find(f => f.name === fileToOpenName);
+            const fileToRestore = findFileByName(itemList, fileToOpenName);
             if (fileToRestore) {
               const content = await readFile(fileToRestore);
               setEditorContent(deserialize(content));
@@ -61,8 +74,8 @@ function App() {
       setDirHandle(handle)
       setFolderName(handle.name)
       await saveDirectoryHandle(handle)
-      const fileList = await listFiles(handle)
-      setFiles(fileList)
+      const itemList = await scanDirectory(handle)
+      setItems(itemList)
     }
   }
 
@@ -98,8 +111,8 @@ function App() {
       const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
       // content default
       await writeFile(fileHandle, "");
-      const fileList = await listFiles(dirHandle);
-      setFiles(fileList);
+      const itemList = await scanDirectory(dirHandle);
+      setItems(itemList);
       handleSelectFile(fileHandle);
     } catch (e) {
       console.error("Failed to create file", e);
