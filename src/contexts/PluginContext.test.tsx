@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PluginProvider, usePlugin } from '../../contexts/PluginContext';
-import { pluginManager } from '../../lib/plugins/PluginManager';
+import { pluginManager } from '../lib/plugins/PluginManager';
+import { PluginProvider, usePlugin } from './PluginContext';
 
 // Reset plugins
 const mockPlugin = {

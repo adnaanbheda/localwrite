@@ -1,5 +1,6 @@
 import type { Descendant } from 'slate';
 import { describe, expect, it } from 'vitest';
+import type { TableCellElement, TableElement, TableRowElement } from '../components/custom-types';
 import { deserialize, serialize } from './markdown';
 
 describe('markdown tables', () => {
@@ -8,16 +9,22 @@ describe('markdown tables', () => {
 | --- | --- |
 | Cell 1 | Cell 2 |`;
         const result = deserialize(markdown);
-        expect(result[0].type).toBe('table');
-        expect(result[0].children).toHaveLength(2); // Header row + Body row (separator is consumed)
+        const table = result[0] as TableElement;
+
+        expect(table.type).toBe('table');
+        expect(table.children).toHaveLength(2); // Header row + Body row (separator is consumed)
 
         // Header Row
-        expect(result[0].children[0].type).toBe('table-row');
-        expect(result[0].children[0].children[0].children[0].text).toBe('Header 1');
+        const headerRow = table.children[0] as TableRowElement;
+        expect(headerRow.type).toBe('table-row');
+        const headerCell = headerRow.children[0] as TableCellElement;
+        expect((headerCell.children[0] as any).text).toBe('Header 1');
 
         // Body Row
-        expect(result[0].children[1].type).toBe('table-row');
-        expect(result[0].children[1].children[0].children[0].text).toBe('Cell 1');
+        const bodyRow = table.children[1] as TableRowElement;
+        expect(bodyRow.type).toBe('table-row');
+        const bodyCell = bodyRow.children[0] as TableCellElement;
+        expect((bodyCell.children[0] as any).text).toBe('Cell 1');
     });
 
     it('serializes a simple table', () => {
