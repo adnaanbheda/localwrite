@@ -2,6 +2,8 @@
 
 A **local-first** rich text editor for personal notes and writing. Your data stays on your device—no servers, no sync, no tracking.
 
+**Live Demo:** [localwrite.adnaan.me](https://localwrite.adnaan.me)
+
 ## Philosophy
 
 LocalWrite isn't trying to compete with powerful editors like Obsidian or Google Docs. Instead, it's built for quick, personal writing where **privacy and simplicity matter most**. 
