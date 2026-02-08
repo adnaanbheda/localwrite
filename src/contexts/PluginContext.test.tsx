@@ -54,7 +54,8 @@ describe('PluginContext', () => {
         });
 
         expect(screen.getByTestId('is-enabled')).toHaveTextContent('true');
-        expect(screen.getByTestId('enabled-list')).toContain('ctx-test');
+        // FIXED: Using toHaveTextContent instead of toContain for element check
+        expect(screen.getByTestId('enabled-list')).toHaveTextContent('ctx-test');
     });
 
     it('disables a plugin', async () => {

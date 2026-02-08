@@ -85,6 +85,11 @@ function App() {
 
     const content = await readFile(file)
     const nodes = deserialize(content)
+
+    // Update ref BEFORE state updates trigger render/unmount to ensure
+    // any cleanup events from the old editor are ignored.
+    currentFileRef.current = file;
+
     setEditorContent(nodes)
     setCurrentFile(file)
     await saveLastFile(file.name)
@@ -110,7 +115,7 @@ function App() {
       await writeFile(fileHandle, "");
       const itemList = await scanDirectory(dirHandle);
       setItems(itemList);
-      handleSelectFile(fileHandle);
+      await handleSelectFile(fileHandle);
     } catch (e) {
       console.error("Failed to create file", e);
       alert("Failed to create file");
@@ -118,8 +123,19 @@ function App() {
   }
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentFileRef = useRef<FileSystemFileHandle | null>(null);
+
+  useEffect(() => {
+    currentFileRef.current = currentFile;
+  }, [currentFile]);
 
   const handleEditorChange = useCallback((value: Descendant[]) => {
+    // Prevent stale updates: if the editor instance calling this corresponds
+    // to a different file than what is currently active, ignore it.
+    if (currentFileRef.current && currentFile !== currentFileRef.current) {
+      return;
+    }
+
     setEditorContent(value); // Sync local state for HistoryPanel access
 
     // Switch to outline tab when editing if currently on files tab
