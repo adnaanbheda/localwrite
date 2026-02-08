@@ -1,5 +1,5 @@
 import { FileText, List, Menu, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
@@ -8,9 +8,8 @@ import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
 import { usePlugin } from './contexts/PluginContext'
 import { useEditor } from './hooks/useEditor'
+import { useFileRestoration } from './hooks/useFileRestoration'
 import { useFileSystem } from './hooks/useFileSystem'
-import type { FileSystemItem } from './lib/storage'
-import { loadLastFile } from './lib/storage'
 import { cn } from './lib/utils'
 
 function App() {
@@ -33,17 +32,8 @@ function App() {
     handleRestoreVersion
   } = useEditor()
 
-  // Helper to find file in tree
-  const findFileByName = (items: FileSystemItem[], name: string): FileSystemFileHandle | undefined => {
-    for (const item of items) {
-      if (item.kind === 'file' && item.name === name) return item.handle as FileSystemFileHandle;
-      if (item.kind === 'directory' && item.children) {
-        const found = findFileByName(item.children, name);
-        if (found) return found;
-      }
-    }
-    return undefined;
-  }
+  // initialization hook
+  useFileRestoration(initFileSystem, openFile);
 
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -55,26 +45,6 @@ function App() {
       setSidebarTab('outline');
     }
   }, [handleEditorChange, sidebarTab]);
-
-  useEffect(() => {
-    async function init() {
-      const loadedItems = await initFileSystem();
-
-      // Try to restore last file
-      const params = new URLSearchParams(window.location.search);
-      const fileParam = params.get('file');
-      const lastFileName = await loadLastFile();
-      const fileToOpenName = fileParam || lastFileName;
-
-      if (fileToOpenName && loadedItems.length > 0) {
-        const fileToRestore = findFileByName(loadedItems, fileToOpenName);
-        if (fileToRestore) {
-          await openFile(fileToRestore);
-        }
-      }
-    }
-    init();
-  }, [initFileSystem, openFile])
 
   const handleCreateFile = async () => {
     const name = prompt("Enter file name (without extension):");

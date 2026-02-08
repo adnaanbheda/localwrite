@@ -240,3 +240,14 @@ export async function getVersionContent(
         return null;
     }
 }
+
+export const findFileByName = (items: FileSystemItem[], name: string): FileSystemFileHandle | undefined => {
+    for (const item of items) {
+        if (item.kind === 'file' && item.name === name) return item.handle as FileSystemFileHandle;
+        if (item.kind === 'directory' && item.children) {
+            const found = findFileByName(item.children, name);
+            if (found) return found;
+        }
+    }
+    return undefined;
+}
