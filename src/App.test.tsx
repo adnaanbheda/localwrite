@@ -97,78 +97,78 @@ describe('App Integration', () => {
     ]);
     (storage.readFile as any).mockResolvedValue('Existing Content');
     vi.spyOn(window, 'prompt').mockImplementation(() => 'new-file');
-});
 
-it('loads and displays files', async () => {
-    render(
-        <PluginProvider>
-            <App />
-        </PluginProvider>
-    );
+    it('loads and displays files', async () => {
+        render(
+            <PluginProvider>
+                <App />
+            </PluginProvider>
+        );
 
-    await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
-    expect(screen.getAllByText('existing.md')[0]).toBeInTheDocument();
-});
-
-it('opens a file and shows content', async () => {
-    render(
-        <PluginProvider>
-            <App />
-        </PluginProvider>
-    );
-
-    await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
-
-    const fileBtn = screen.getAllByText('existing.md')[0];
-    await act(async () => {
-        fileBtn.click();
+        await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
+        expect(screen.getAllByText('existing.md')[0]).toBeInTheDocument();
     });
 
-    await waitFor(() => {
-        expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('Existing Content');
-    });
-});
+    it('opens a file and shows content', async () => {
+        render(
+            <PluginProvider>
+                <App />
+            </PluginProvider>
+        );
 
-it.only('creates a new file and SHOWS EMPTY content (Bug Repro)', async () => {
-    render(
-        <PluginProvider>
-            <App />
-        </PluginProvider>
-    );
+        await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
 
-    // 1. Open existing file first
-    await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
-    await act(async () => {
-        screen.getAllByText('existing.md')[0].click();
-    });
-    await waitFor(() => expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('Existing Content'));
+        const fileBtn = screen.getAllByText('existing.md')[0];
+        await act(async () => {
+            fileBtn.click();
+        });
 
-    // 2. Create new file
-    // Mock scanDirectory to return BOTH files now
-    (storage.scanDirectory as any).mockResolvedValue([
-        { name: 'existing.md', kind: 'file', handle: createMockFileHandle('existing.md', 'Existing Content') },
-        // new file handle
-        { name: 'new-file.md', kind: 'file', handle: createMockFileHandle('new-file.md', '') }
-    ]);
-
-    // Mock readFile to return empty string for new file
-    (storage.readFile as any).mockImplementation((handle: any) => {
-        if (handle.name === 'new-file.md') return '';
-        return 'Existing Content';
+        await waitFor(() => {
+            expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('Existing Content');
+        });
     });
 
-    const newFileBtn = screen.getAllByText('New File')[0];
-    await act(async () => {
-        newFileBtn.click();
-    });
+    it('creates a new file and SHOWS EMPTY content (Bug Repro)', async () => {
+        render(
+            <PluginProvider>
+                <App />
+            </PluginProvider>
+        );
 
-    // 3. Verify editor shows empty content
-    await waitFor(() => {
-        // If bug exists, this might show 'Existing Content'
-        const content = screen.getByTestId('editor-content').textContent;
-        expect(content).toBe('');
-    });
+        // 1. Open existing file first
+        await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
+        await act(async () => {
+            screen.getAllByText('existing.md')[0].click();
+        });
+        await waitFor(() => expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('Existing Content'));
 
-    // Also verify URL updated (optional but good)
-    expect(window.location.search).toContain('new-file.md');
+        // 2. Create new file
+        // Mock scanDirectory to return BOTH files now
+        (storage.scanDirectory as any).mockResolvedValue([
+            { name: 'existing.md', kind: 'file', handle: createMockFileHandle('existing.md', 'Existing Content') },
+            // new file handle
+            { name: 'new-file.md', kind: 'file', handle: createMockFileHandle('new-file.md', '') }
+        ]);
+
+        // Mock readFile to return empty string for new file
+        (storage.readFile as any).mockImplementation((handle: any) => {
+            if (handle.name === 'new-file.md') return '';
+            return 'Existing Content';
+        });
+
+        const newFileBtn = screen.getAllByText('New File')[0];
+        await act(async () => {
+            newFileBtn.click();
+        });
+
+        // 3. Verify editor shows empty content
+        await waitFor(() => {
+            // If bug exists, this might show 'Existing Content'
+            const content = screen.getByTestId('editor-content').textContent;
+            expect(content).toBe('');
+        });
+
+        // Also verify URL updated (optional but good)
+        expect(window.location.search).toContain('new-file.md');
+    });
 });

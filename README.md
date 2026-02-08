@@ -20,7 +20,7 @@ Perfect for:
 - **Privacy First**: No accounts, no servers, no tracking, no data collection
 - **Instant Access**: Just open and write—no setup, no configuration
 - **Rich Text Support**: Basic formatting (bold, italic, underline) for readable notes
-- **Auto-Save**: Your work saves automatically to browser storage
+- **Auto-Save**: Your work saves automatically to your local file system
 - **Keyboard Shortcuts**: Efficient editing with familiar shortcuts
 - **Clean Interface**: Distraction-free writing experience
 
