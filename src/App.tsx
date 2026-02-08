@@ -1,6 +1,5 @@
 import { FileText, List, Menu, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
-import type { Descendant } from 'slate'
+import { useState } from 'react'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
 import { TableOfContents } from './components/retroui/TableOfContents'
@@ -38,13 +37,6 @@ function App() {
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  const onEditorChangeWrapped = useCallback((value: Descendant[]) => {
-    handleEditorChange(value);
-    // Switch to outline tab when editing if currently on files tab
-    if (sidebarTab === 'files') {
-      setSidebarTab('outline');
-    }
-  }, [handleEditorChange, sidebarTab]);
 
   const handleCreateFile = async () => {
     const name = prompt("Enter file name (without extension):");
@@ -197,7 +189,12 @@ function App() {
         <div className="editor-container">
           <Editor
             value={editorContent}
-            onChange={onEditorChangeWrapped}
+            onChange={handleEditorChange}
+            onHeadingActive={() => {
+              if (sidebarTab === 'files') {
+                setSidebarTab('outline');
+              }
+            }}
             key={currentFile?.name || 'empty'} // Force remount on file change to reset editor state cleanly
           />
         </div>

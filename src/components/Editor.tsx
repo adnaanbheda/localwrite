@@ -4,6 +4,8 @@ import {
     createEditor,
     type Descendant,
     Node,
+    Editor as SlateEditor,
+    Element as SlateElement,
     Transforms
 } from 'slate'
 import { withHistory } from 'slate-history'
@@ -37,9 +39,10 @@ import { withShortcuts } from './withShortcuts'
 interface EditorProps {
     value: Descendant[]
     onChange: (value: Descendant[]) => void
+    onHeadingActive?: () => void
 }
 
-const Editor = ({ value, onChange }: EditorProps) => {
+const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
     const renderElement = useCallback(
         (props: RenderElementProps) => <Element {...props} />,
         []
@@ -65,11 +68,26 @@ const Editor = ({ value, onChange }: EditorProps) => {
         }
     }, [value]) // Re-run when value changes (content loaded)
 
+    const handleChange = (newValue: Descendant[]) => {
+        onChange(newValue)
+
+        // Check if selection is in a heading
+        if (editor.selection && onHeadingActive) {
+            const [match] = SlateEditor.nodes(editor, {
+                match: n => !SlateEditor.isEditor(n) && SlateElement.isElement(n) && ['heading-one', 'heading-two'].includes(n.type),
+                mode: 'lowest'
+            })
+            if (match) {
+                onHeadingActive()
+            }
+        }
+    }
+
     return (
         <Slate
             editor={editor}
             initialValue={value}
-            onChange={onChange}
+            onChange={handleChange}
         >
             <div className="editor-wrapper">
                 <Toolbar />
