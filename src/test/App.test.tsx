@@ -1,13 +1,14 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import App from './App';
-import { PluginProvider } from './contexts/PluginContext';
-import * as storage from './lib/storage';
+import App from '../App';
+import { PluginProvider } from '../contexts/PluginContext';
+import * as storage from '../lib/storage';
+
+import { createMockFileHandle } from './utils';
 
 // Mock storage module entirely
-vi.mock('./lib/storage', async (importOriginal) => {
-    return {
-        ...await importOriginal<any>(),
+vi.mock('../lib/storage', async (importOriginal) => {
+    const mockStorageImplementation = {
         loadDirectoryHandle: vi.fn(),
         scanDirectory: vi.fn(),
         readFile: vi.fn(),
@@ -21,12 +22,17 @@ vi.mock('./lib/storage', async (importOriginal) => {
         saveVersion: vi.fn(),
         getVersions: vi.fn().mockResolvedValue([]),
     };
+
+    return {
+        ...await importOriginal<any>(),
+        ...mockStorageImplementation,
+    };
 });
 
 // Mock Editor to inspect content
 // We need to forward refs if used, but App.tsx doesn't ref Editor directly?
 // App.tsx passes key, value, onChange
-vi.mock('./components/Editor', () => ({
+vi.mock('../components/Editor', () => ({
     default: ({ value, onChange, ...props }: any) => {
         // Render simple text representation
         console.log('[MockEditor] Render with key:', props.key);
@@ -44,7 +50,7 @@ vi.mock('./components/Editor', () => ({
 }));
 
 // Mock FileExplorer for easier interaction
-vi.mock('./components/FileExplorer', () => ({
+vi.mock('../components/FileExplorer', () => ({
     FileExplorer: ({ items, onSelectFile, onCreateFile }: any) => (
         <div data-testid="file-explorer">
             {items.map((item: any) => (
@@ -58,21 +64,8 @@ vi.mock('./components/FileExplorer', () => ({
 }));
 
 // Mock other components to reduce noise
-vi.mock('./components/retroui/TableOfContents', () => ({ TableOfContents: () => <div /> }));
-vi.mock('./components/Settings', () => ({ Settings: () => <div /> }));
-
-// Helper to create handles
-const createMockFileHandle = (name: string, content = '') => ({
-    name,
-    kind: 'file',
-    createWritable: vi.fn().mockResolvedValue({
-        write: vi.fn(),
-        close: vi.fn(),
-    }),
-    getFile: vi.fn().mockResolvedValue({
-        text: vi.fn().mockResolvedValue(content),
-    })
-});
+vi.mock('../components/retroui/TableOfContents', () => ({ TableOfContents: () => <div /> }));
+vi.mock('../components/Settings', () => ({ Settings: () => <div /> }));
 
 describe('App Integration', () => {
     vi.clearAllMocks();
