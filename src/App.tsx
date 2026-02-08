@@ -1,5 +1,5 @@
 import { FileText, List, Menu, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { FileExplorer } from './components/FileExplorer'
@@ -7,15 +7,31 @@ import { TableOfContents } from './components/retroui/TableOfContents'
 import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
 import { Settings } from './components/Settings'
 import { usePlugin } from './contexts/PluginContext'
-import { deserialize, serialize } from './lib/markdown'
+import { useEditor } from './hooks/useEditor'
+import { useFileSystem } from './hooks/useFileSystem'
 import type { FileSystemItem } from './lib/storage'
-import { getDirectoryHandle, loadDirectoryHandle, loadLastFile, readFile, saveDirectoryHandle, saveLastFile, scanDirectory, verifyPermission, writeFile } from './lib/storage'
+import { loadLastFile } from './lib/storage'
 import { cn } from './lib/utils'
 
 function App() {
   const { plugins, isPluginEnabled } = usePlugin()
-  const [items, setItems] = useState<FileSystemItem[]>([])
-  const [currentFile, setCurrentFile] = useState<FileSystemFileHandle | null>(null)
+
+  const {
+    dirHandle,
+    items,
+    folderName,
+    init: initFileSystem,
+    setFolder,
+    createFile
+  } = useFileSystem()
+
+  const {
+    currentFile,
+    editorContent,
+    openFile,
+    handleEditorChange,
+    handleRestoreVersion
+  } = useEditor()
 
   // Helper to find file in tree
   const findFileByName = (items: FileSystemItem[], name: string): FileSystemFileHandle | undefined => {
@@ -28,144 +44,51 @@ function App() {
     }
     return undefined;
   }
-  const [folderName, setFolderName] = useState<string | null>(null)
-  const [editorContent, setEditorContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] }])
-  const [dirHandle, setDirHandle] = useState<FileSystemDirectoryHandle | null>(null)
+
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  useEffect(() => {
-    async function init() {
-      const handle = await loadDirectoryHandle();
-      if (handle) {
-        if (await verifyPermission(handle, false)) {
-          setDirHandle(handle);
-          setFolderName(handle.name);
-          const itemList = await scanDirectory(handle);
-          setItems(itemList);
-
-          // Try to restore last file from URL or Storage
-          const params = new URLSearchParams(window.location.search);
-          const fileParam = params.get('file');
-          const lastFileName = await loadLastFile();
-
-          const fileToOpenName = fileParam || lastFileName;
-
-          if (fileToOpenName) {
-            const fileToRestore = findFileByName(itemList, fileToOpenName);
-            if (fileToRestore) {
-              const content = await readFile(fileToRestore);
-              setEditorContent(deserialize(content));
-              setCurrentFile(fileToRestore);
-            }
-          }
-        }
-      }
-    }
-    init();
-  }, [])
-
-  const handleSetFolder = async () => {
-    const handle = await getDirectoryHandle()
-    if (handle) {
-      setDirHandle(handle)
-      setFolderName(handle.name)
-      await saveDirectoryHandle(handle)
-      const itemList = await scanDirectory(handle)
-      setItems(itemList)
-    }
-  }
-
-  const handleSelectFile = async (file: FileSystemFileHandle) => {
-    if (file === currentFile) return
-    setIsMobileMenuOpen(false)
-
-    // Verify permission for read/write on the specific file if needed, 
-    // but usually directory permission covers it.
-
-    const content = await readFile(file)
-    const nodes = deserialize(content)
-
-    // Update ref BEFORE state updates trigger render/unmount to ensure
-    // any cleanup events from the old editor are ignored.
-    currentFileRef.current = file;
-
-    setEditorContent(nodes)
-    setCurrentFile(file)
-    await saveLastFile(file.name)
-
-    // Update URL
-    const url = new URL(window.location.href);
-    url.searchParams.set('file', file.name);
-    window.history.replaceState(null, '', url.toString());
-  }
-
-  const handleCreateFile = async () => {
-    if (!dirHandle) return;
-
-    // Simple prompt for now
-    const name = prompt("Enter file name (without extension):");
-    if (!name) return;
-
-    const fileName = name.endsWith('.md') ? name : `${name}.md`;
-
-    try {
-      const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
-      // content default
-      await writeFile(fileHandle, "");
-      const itemList = await scanDirectory(dirHandle);
-      setItems(itemList);
-      await handleSelectFile(fileHandle);
-    } catch (e) {
-      console.error("Failed to create file", e);
-      alert("Failed to create file");
-    }
-  }
-
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentFileRef = useRef<FileSystemFileHandle | null>(null);
-
-  useEffect(() => {
-    currentFileRef.current = currentFile;
-  }, [currentFile]);
-
-  const handleEditorChange = useCallback((value: Descendant[]) => {
-    // Prevent stale updates: if the editor instance calling this corresponds
-    // to a different file than what is currently active, ignore it.
-    if (currentFileRef.current && currentFile !== currentFileRef.current) {
-      return;
-    }
-
-    setEditorContent(value); // Sync local state for HistoryPanel access
-
+  const onEditorChangeWrapped = useCallback((value: Descendant[]) => {
+    handleEditorChange(value);
     // Switch to outline tab when editing if currently on files tab
     if (sidebarTab === 'files') {
       setSidebarTab('outline');
     }
+  }, [handleEditorChange, sidebarTab]);
 
-    if (!currentFile) return;
+  useEffect(() => {
+    async function init() {
+      const loadedItems = await initFileSystem();
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
+      // Try to restore last file
+      const params = new URLSearchParams(window.location.search);
+      const fileParam = params.get('file');
+      const lastFileName = await loadLastFile();
+      const fileToOpenName = fileParam || lastFileName;
+
+      if (fileToOpenName && loadedItems.length > 0) {
+        const fileToRestore = findFileByName(loadedItems, fileToOpenName);
+        if (fileToRestore) {
+          await openFile(fileToRestore);
+        }
+      }
     }
+    init();
+  }, [initFileSystem, openFile])
 
-    saveTimeoutRef.current = setTimeout(async () => {
-      const markdown = serialize(value);
-      await writeFile(currentFile, markdown);
-    }, 1000);
-  }, [currentFile, sidebarTab]);
+  const handleCreateFile = async () => {
+    const name = prompt("Enter file name (without extension):");
+    if (!name) return;
 
-  const handleRestoreVersion = async (content: string) => {
-    const nodes = deserialize(content);
-    setEditorContent(nodes);
-    // Also save to disk immediately so file system is in sync
-    if (currentFile) {
-      await writeFile(currentFile, content);
+    try {
+      const newHandle = await createFile(name);
+      if (newHandle) {
+        await openFile(newHandle);
+      }
+    } catch (e) {
+      alert("Failed to create file");
     }
-    setIsMobileMenuOpen(false)
   }
-
-  // existing state...
 
   const SidebarContent = () => (
     <>
@@ -201,7 +124,10 @@ function App() {
             {sidebarTab === 'files' ? (
               <FileExplorer
                 items={items}
-                onSelectFile={handleSelectFile}
+                onSelectFile={(file) => {
+                  openFile(file);
+                  setIsMobileMenuOpen(false);
+                }}
                 onCreateFile={handleCreateFile}
                 currentFile={currentFile}
               />
@@ -218,7 +144,10 @@ function App() {
                     dirHandle,
                     currentFile,
                     editorContent,
-                    onRestore: handleRestoreVersion
+                    onRestore: (content: string) => {
+                      handleRestoreVersion(content);
+                      setIsMobileMenuOpen(false);
+                    }
                   });
                 }
                 return null;
@@ -233,7 +162,7 @@ function App() {
       </div>
       <div className="mt-auto pt-6 border-t border-border">
         <Settings
-          onSetFolder={handleSetFolder}
+          onSetFolder={setFolder}
           folderName={folderName}
         />
       </div>
@@ -298,7 +227,7 @@ function App() {
         <div className="editor-container">
           <Editor
             value={editorContent}
-            onChange={handleEditorChange}
+            onChange={onEditorChangeWrapped}
             key={currentFile?.name || 'empty'} // Force remount on file change to reset editor state cleanly
           />
         </div>
