@@ -36,23 +36,19 @@ export function useFileSystem() {
         try {
             const handle = await getDirectoryHandle();
             if (handle) {
-                let currentWorkspaceId = workspaceId;
+                const slug = handle.name
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/(^-|-$)/g, '') || handle.name;
 
-                // If no workspace set, generate one from folder name and update context + URL
-                if (!currentWorkspaceId) {
-                    const slug = handle.name
-                        .toLowerCase()
-                        .replace(/[^a-z0-9]+/g, '-')
-                        .replace(/(^-|-$)/g, '') || handle.name;
-
-                    // Update the workspace ID in context and URL
+                // Update the workspace ID in context and URL
+                if (workspaceId !== slug) {
                     updateWorkspaceId(slug);
-                    currentWorkspaceId = slug;
                 }
 
                 setDirHandle(handle);
                 setFolderName(handle.name);
-                await saveDirectoryHandle(handle, currentWorkspaceId);
+                await saveDirectoryHandle(handle, slug);
                 const itemList = await scanDirectory(handle);
                 setItems(itemList);
                 return handle;

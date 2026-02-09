@@ -67,11 +67,22 @@ export function useEditor() {
         }
     }, [currentFile])
 
+    const clear = useCallback(() => {
+        setCurrentFile(null)
+        setEditorContent(initialValue)
+        currentFileRef.current = null
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('file');
+        window.history.replaceState(null, '', url.toString());
+    }, [])
+
     return {
         currentFile,
         editorContent,
         openFile,
         handleEditorChange,
-        handleRestoreVersion
+        handleRestoreVersion,
+        clear
     }
 }

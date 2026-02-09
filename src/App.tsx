@@ -27,7 +27,8 @@ function App() {
     editorContent,
     openFile,
     handleEditorChange,
-    handleRestoreVersion
+    handleRestoreVersion,
+    clear: clearEditor
   } = useEditor()
 
   // initialization hook
@@ -35,6 +36,13 @@ function App() {
 
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | string>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  const handleSetFolder = useCallback(async () => {
+    const handle = await setFolder();
+    if (handle) {
+      clearEditor();
+    }
+  }, [setFolder, clearEditor]);
 
   const handleEditorChangeWrapped = useCallback((value: Descendant[]) => {
     handleEditorChange(value);
@@ -79,7 +87,7 @@ function App() {
       setIsMobileMenuOpen(false);
     },
     onCreateFile: handleCreateFile,
-    onSetFolder: setFolder,
+    onSetFolder: handleSetFolder,
     onRestoreVersion: (content: string) => {
       handleRestoreVersion(content);
       setIsMobileMenuOpen(false);
