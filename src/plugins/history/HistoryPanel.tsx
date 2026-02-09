@@ -1,10 +1,10 @@
 import { Button } from '@/components/retroui/Button';
 import { SidebarAPI } from '@/components/SidebarAPI';
 import { serialize } from '@/lib/markdown';
-import { type Version, getVersionContent, getVersions, saveVersion } from '@/lib/storage';
 import { History, RotateCcw, Save } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Descendant } from 'slate';
+import { type Version, getVersionContent, getVersions, saveVersion } from './storage';
 
 interface HistoryPanelProps {
     dirHandle: FileSystemDirectoryHandle | null;
@@ -18,9 +18,47 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
     const [note, setNote] = useState('');
     const [loading, setLoading] = useState(false);
 
+    // Auto-save refs
+    const lastAutoSaveTime = useRef<number>(Date.now());
+    const lastSavedContent = useRef<string>('');
+    const initialLoadDone = useRef(false);
+
     useEffect(() => {
         loadVersions();
     }, [dirHandle, currentFile]);
+
+    // Auto-save logic
+    useEffect(() => {
+        if (!dirHandle || !currentFile || !editorContent) return;
+
+        const currentMarkdown = serialize(editorContent);
+
+        // Skip first load or empty content
+        if (!initialLoadDone.current) {
+            lastSavedContent.current = currentMarkdown;
+            initialLoadDone.current = true;
+            return;
+        }
+
+        // Check if content changed
+        if (currentMarkdown !== lastSavedContent.current) {
+            const now = Date.now();
+            const timeSinceLastSave = now - lastAutoSaveTime.current;
+            const AUTO_SAVE_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+            if (timeSinceLastSave > AUTO_SAVE_INTERVAL) {
+                // Trigger auto-save
+                console.log("Auto-saving history...");
+                saveVersion(dirHandle, currentFile.name, currentMarkdown, 'Auto-save', 'auto')
+                    .then(() => {
+                        lastAutoSaveTime.current = now;
+                        lastSavedContent.current = currentMarkdown;
+                        loadVersions(); // Refresh list
+                    })
+                    .catch(err => console.error("Auto-save failed:", err));
+            }
+        }
+    }, [editorContent, dirHandle, currentFile]);
 
     async function loadVersions() {
         if (!dirHandle || !currentFile) {
@@ -37,8 +75,13 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
         if (!dirHandle || !currentFile) return;
 
         const content = serialize(editorContent);
-        await saveVersion(dirHandle, currentFile.name, content, note);
+        await saveVersion(dirHandle, currentFile.name, content, note, 'manual');
         setNote('');
+
+        // Reset auto-save timer/content on manual commit too, to avoid duplicate immediate auto-save
+        lastAutoSaveTime.current = Date.now();
+        lastSavedContent.current = content;
+
         loadVersions();
     }
 
