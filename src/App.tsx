@@ -99,7 +99,7 @@ function App() {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-bold text-lg font-head">LocalWrite</span>
+          <span className="font-bold text-lg font-head">localwrite</span>
         </div>
         {currentFile && (
           <span className="text-xs font-medium px-2 py-1 bg-primary border-2 border-foreground shadow-[2px_2px_0_0_#000] truncate max-w-[150px]">
@@ -137,7 +137,7 @@ function App() {
       {/* Desktop Sidebar */}
       <div className="sidebar-container">
         <div className="mb-8 p-1">
-          <span className="font-bold text-2xl font-head tracking-tighter">LocalWrite</span>
+          <span className="font-bold text-2xl font-head tracking-tighter">localwrite</span>
         </div>
         <Sidebar {...sidebarProps} />
       </div>
