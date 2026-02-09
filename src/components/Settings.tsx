@@ -104,7 +104,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                         <div className="space-y-2 pt-2 border-t border-border">
                             <div className="flex items-center justify-between">
                                 <span className="text-foreground">About</span>
-                                <span className="text-xs text-muted-foreground">v0.1.0</span>
+                                <span className="text-xs text-muted-foreground">v{__APP_VERSION__}</span>
                             </div>
                         </div>
                     </div>

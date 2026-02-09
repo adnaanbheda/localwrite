@@ -1,10 +1,11 @@
-import { FileText, List } from 'lucide-react'
-import type { Descendant } from 'slate'
-import type { FileSystemItem } from '../lib/storage'
-import { FileExplorer } from './FileExplorer'
-import { Settings } from './Settings'
-import { SidebarAPI } from './SidebarAPI'
-import { TableOfContents } from './retroui/TableOfContents'
+import { FileText, List } from 'lucide-react';
+import type { Descendant } from 'slate';
+import type { Plugin } from '../lib/plugins/types'; // Import Plugin type
+import type { FileSystemItem } from '../lib/storage';
+import { FileExplorer } from './FileExplorer';
+import { Settings } from './Settings';
+import { SidebarAPI } from './SidebarAPI';
+import { TableOfContents } from './retroui/TableOfContents';
 
 // Props needed for the smart component
 interface SidebarProps {
@@ -19,7 +20,7 @@ interface SidebarProps {
     onCreateFile: () => void
     onSetFolder: () => void
     onRestoreVersion: (content: string) => void
-    plugins: any[] // Typing this properly would be better, but 'any' matches previous implied usage
+    plugins: Plugin[]
     isPluginEnabled: (id: string) => boolean
 }
 
@@ -38,31 +39,32 @@ export function Sidebar({
     plugins,
     isPluginEnabled
 }: SidebarProps) {
+    const staticTabs = [
+        { id: 'files', icon: FileText, label: 'Files' },
+        { id: 'outline', icon: List, label: 'Outline' }
+    ];
+
     return (
         <SidebarAPI.Root>
             <SidebarAPI.Content>
                 {dirHandle ? (
                     <>
                         <SidebarAPI.Group>
-                            <SidebarAPI.Item
-                                icon={FileText}
-                                active={sidebarTab === 'files'}
-                                onClick={() => setSidebarTab('files')}
-                            >
-                                Files
-                            </SidebarAPI.Item>
-                            <SidebarAPI.Item
-                                icon={List}
-                                active={sidebarTab === 'outline'}
-                                onClick={() => setSidebarTab('outline')}
-                            >
-                                Outline
-                            </SidebarAPI.Item>
+                            {staticTabs.map(tab => (
+                                <SidebarAPI.Item
+                                    key={tab.id}
+                                    icon={tab.icon}
+                                    active={sidebarTab === tab.id}
+                                    onClick={() => setSidebarTab(tab.id)}
+                                >
+                                    {tab.label}
+                                </SidebarAPI.Item>
+                            ))}
                             {plugins.filter(p => isPluginEnabled(p.id) && p.renderSidebarIcon).map(plugin => (
                                 <SidebarAPI.Item
                                     key={plugin.id}
                                     active={sidebarTab === plugin.id}
-                                    onClick={() => setSidebarTab(plugin.id as any)}
+                                    onClick={() => setSidebarTab(plugin.id)}
                                 >
                                     {plugin.renderSidebarIcon!()}
                                     <span>{plugin.name}</span>

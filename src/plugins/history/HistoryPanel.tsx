@@ -1,19 +1,12 @@
 import { Button } from '@/components/retroui/Button';
 import { SidebarAPI } from '@/components/SidebarAPI';
 import { serialize } from '@/lib/markdown';
+import type { PluginSidebarProps } from '@/lib/plugins/types';
 import { History, RotateCcw, Save } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { Descendant } from 'slate';
 import { type Version, getVersionContent, getVersions, saveVersion } from './storage';
 
-interface HistoryPanelProps {
-    dirHandle: FileSystemDirectoryHandle | null;
-    currentFile: FileSystemFileHandle | null;
-    editorContent: Descendant[];
-    onRestore: (content: string) => void;
-}
-
-export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore }: HistoryPanelProps) {
+export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore }: PluginSidebarProps) {
     const [versions, setVersions] = useState<Version[]>([]);
     const [note, setNote] = useState('');
     const [loading, setLoading] = useState(false);
