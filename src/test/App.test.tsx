@@ -1,7 +1,8 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { PluginProvider } from '../contexts/PluginContext';
+import { WorkspaceProvider } from '../contexts/WorkspaceContext';
 import * as storage from '../lib/storage';
 
 import { createMockFileHandle } from './utils';
@@ -68,7 +69,9 @@ vi.mock('../components/retroui/TableOfContents', () => ({ TableOfContents: () =>
 vi.mock('../components/Settings', () => ({ Settings: () => <div /> }));
 
 describe('App Integration', () => {
-    vi.clearAllMocks();
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
 
     const mockDirHandle = {
         name: 'TestFolder',
@@ -93,9 +96,11 @@ describe('App Integration', () => {
 
     it('loads and displays files', async () => {
         render(
-            <PluginProvider>
-                <App />
-            </PluginProvider>
+            <WorkspaceProvider initialId="test-workspace">
+                <PluginProvider>
+                    <App />
+                </PluginProvider>
+            </WorkspaceProvider>
         );
 
         await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
@@ -104,9 +109,11 @@ describe('App Integration', () => {
 
     it('opens a file and shows content', async () => {
         render(
-            <PluginProvider>
-                <App />
-            </PluginProvider>
+            <WorkspaceProvider initialId="test-workspace">
+                <PluginProvider>
+                    <App />
+                </PluginProvider>
+            </WorkspaceProvider>
         );
 
         await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
@@ -123,9 +130,11 @@ describe('App Integration', () => {
 
     it('creates a new file and SHOWS EMPTY content (Bug Repro)', async () => {
         render(
-            <PluginProvider>
-                <App />
-            </PluginProvider>
+            <WorkspaceProvider initialId="test-workspace">
+                <PluginProvider>
+                    <App />
+                </PluginProvider>
+            </WorkspaceProvider>
         );
 
         // 1. Open existing file first

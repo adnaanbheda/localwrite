@@ -2,6 +2,7 @@ import { render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../App';
 import { PluginProvider } from '../contexts/PluginContext';
+import { WorkspaceProvider } from '../contexts/WorkspaceContext';
 import * as storage from '../lib/storage';
 
 
@@ -44,9 +45,11 @@ describe('App Stability', () => {
         (storage.scanDirectory as any).mockResolvedValue([]);
 
         render(
-            <PluginProvider>
-                <App />
-            </PluginProvider>
+            <WorkspaceProvider initialId="test-workspace">
+                <PluginProvider>
+                    <App />
+                </PluginProvider>
+            </WorkspaceProvider>
         );
 
         // Wait for initial load

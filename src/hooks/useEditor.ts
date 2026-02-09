@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Descendant } from 'slate'
+import { useWorkspace } from '../contexts/WorkspaceContext'
 import { deserialize, serialize } from '../lib/markdown'
 import { readFile, saveLastFile, writeFile } from '../lib/storage'
 
 const initialValue: Descendant[] = [{ type: 'paragraph', children: [{ text: '' }] }]
 
 export function useEditor() {
+    const { workspaceId } = useWorkspace();
     const [currentFile, setCurrentFile] = useState<FileSystemFileHandle | null>(null)
     const [editorContent, setEditorContent] = useState<Descendant[]>(initialValue)
 
@@ -31,8 +33,10 @@ export function useEditor() {
         setEditorContent(nodes)
         setCurrentFile(file)
 
-        await saveLastFile(file.name)
-    }, [])
+        if (workspaceId) {
+            await saveLastFile(file.name, workspaceId)
+        }
+    }, [workspaceId])
 
     const handleEditorChange = useCallback((value: Descendant[]) => {
         // Prevent stale updates

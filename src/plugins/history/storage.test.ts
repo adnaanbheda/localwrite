@@ -39,10 +39,30 @@ const createMockDirHandle = (files: Record<string, any> = {}) => {
     } as any;
 };
 
+// Polyfills for Vitest/JSDOM environment
+if (typeof Blob !== 'undefined' && !Blob.prototype.stream) {
+    (Blob.prototype as any).stream = function () {
+        return new ReadableStream({
+            start(controller) {
+                controller.enqueue(new TextEncoder().encode('mock compressed data'));
+                controller.close();
+            }
+        });
+    };
+}
+
 // Mock compression to avoid stream issues in test environment
 (globalThis as any).CompressionStream = class {
-    writable = new WritableStream();
-    readable = new ReadableStream();
+    writable = new WritableStream({
+        write() { },
+        close() { }
+    });
+    readable = new ReadableStream({
+        start(controller) {
+            controller.enqueue(new Uint8Array([]));
+            controller.close();
+        }
+    });
 } as any;
 
 describe('History Storage Pruning', () => {
@@ -122,13 +142,17 @@ describe('History Storage Pruning', () => {
         // + 1 manual save = 13 total versions.
 
         // Check history.json content written
-        const writeCalls = fileHandles['history.json'].createWritable.mock.results[0].value.write.mock.calls;
-        // The last write call has the updated index
-        const lastWrite = writeCalls[writeCalls.length - 1][0]; // Assuming Blob or string
-        // In our mock, if we passed string to write, proceed. 
-        // Real code calls write(blob). 
-        // Wait, index is written as string: `await indexWritable.write(JSON.stringify(...))`
+        const createWritableMock = fileHandles['history.json'].createWritable;
+        if (createWritableMock.mock.calls.length === 0) {
+            throw new Error('history.json createWritable was never called');
+        }
 
+        // createWritable returns a Promise, so we must await the result from the mock
+        const writableHandle = await createWritableMock.mock.results[0].value;
+        const writeCalls = writableHandle.write.mock.calls;
+
+        // The last call to write contains the final index
+        const lastWrite = writeCalls[writeCalls.length - 1][0];
         const savedIndex: Version[] = JSON.parse(lastWrite);
 
         const finalAutoVersions = savedIndex.filter(v => v.type === 'auto');

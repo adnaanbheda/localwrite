@@ -111,20 +111,20 @@ export async function writeFile(
     await writable.close();
 }
 
-export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle) {
-    await set('localwrite-dir-handle', handle);
+export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle, workspaceId: string) {
+    await set(`localwrite-ws-${workspaceId}-dir-handle`, handle);
 }
 
-export async function loadDirectoryHandle(): Promise<FileSystemDirectoryHandle | undefined> {
-    return await get('localwrite-dir-handle');
+export async function loadDirectoryHandle(workspaceId: string): Promise<FileSystemDirectoryHandle | undefined> {
+    return await get(`localwrite-ws-${workspaceId}-dir-handle`);
 }
 
-export async function saveLastFile(fileName: string) {
-    await set('localwrite-last-file', fileName);
+export async function saveLastFile(fileName: string, workspaceId: string) {
+    await set(`localwrite-ws-${workspaceId}-last-file`, fileName);
 }
 
-export async function loadLastFile(): Promise<string | undefined> {
-    return await get('localwrite-last-file');
+export async function loadLastFile(workspaceId: string): Promise<string | undefined> {
+    return await get(`localwrite-ws-${workspaceId}-last-file`);
 }
 
 // Version History moved to src/plugins/history/storage.ts

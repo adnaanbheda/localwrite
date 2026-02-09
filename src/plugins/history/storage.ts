@@ -9,13 +9,13 @@ export interface Version {
     type?: 'manual' | 'auto';
 }
 
-export async function getVersionHistoryEnabled(): Promise<boolean> {
-    const val = await get('localwrite-history-enabled');
-    return val === true; // Default to false if undefined, or change to val !== false for true default
+export async function getVersionHistoryEnabled(workspaceId: string): Promise<boolean> {
+    const val = await get(`localwrite-ws-${workspaceId}-history-enabled`);
+    return val === true;
 }
 
-export async function setVersionHistoryEnabled(enabled: boolean): Promise<void> {
-    await set('localwrite-history-enabled', enabled);
+export async function setVersionHistoryEnabled(workspaceId: string, enabled: boolean): Promise<void> {
+    await set(`localwrite-ws-${workspaceId}-history-enabled`, enabled);
 }
 
 async function compress(content: string): Promise<Blob> {

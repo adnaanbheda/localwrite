@@ -10,13 +10,16 @@ import { historyPlugin } from './plugins/history'
 pluginManager.register(historyPlugin);
 
 import { PluginProvider } from './contexts/PluginContext'
+import { WorkspaceProvider } from './contexts/WorkspaceContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-      <PluginProvider>
-        <App />
-      </PluginProvider>
+      <WorkspaceProvider>
+        <PluginProvider>
+          <App />
+        </PluginProvider>
+      </WorkspaceProvider>
     </ThemeProvider>
   </StrictMode>,
 )
