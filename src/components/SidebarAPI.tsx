@@ -117,10 +117,10 @@ export function SidebarSwitch({ value, children }: SidebarSwitchProps) {
 }
 
 interface SidebarCaseProps {
-    value: string
+    value?: string
     children: ReactNode
 }
 
 export function SidebarCase({ value, children }: SidebarCaseProps) {
-    return <>{children}</>
+    return <div data-value={value}>{children}</div>
 }
