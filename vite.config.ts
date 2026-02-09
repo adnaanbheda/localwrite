@@ -18,8 +18,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'LocalWrite',
-        short_name: 'LocalWrite',
+        name: 'localwrite',
+        short_name: 'localwrite',
         description: 'Offline capable rich text editor',
         theme_color: '#ffffff',
         icons: [

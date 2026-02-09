@@ -88,7 +88,7 @@ const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
                 <Toolbar />
                 <div className="p-4 min-h-[300px]">
                     <ContextMenu>
-                        <ContextMenu.Trigger>
+                        <ContextMenu.Trigger asChild>
                             <Editable
                                 renderElement={renderElement}
                                 renderLeaf={renderLeaf}
@@ -104,7 +104,7 @@ const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
                                         }
                                     }
                                 }}
-                                className="outline-none"
+                                className="outline-none text-foreground min-h-[300px]"
                             />
                         </ContextMenu.Trigger>
                         <ContextMenu.Content>

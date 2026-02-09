@@ -1,4 +1,4 @@
-# LocalWrite
+# localwrite
 
 A **local-first** rich text editor for personal notes and writing. Your data stays on your device—no servers, no sync, no tracking.
 

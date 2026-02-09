@@ -3,12 +3,14 @@ import { Menu, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
+import { PluginRunner } from './components/PluginRunner'
 import { Sidebar } from './components/Sidebar'
 import { usePlugin } from './contexts/PluginContext'
 import { useEditor } from './hooks/useEditor'
 import { useFileRestoration } from './hooks/useFileRestoration'
 import { useFileSystem } from './hooks/useFileSystem'
 import { cn } from './lib/utils'
+
 
 function App() {
   const { plugins, isPluginEnabled } = usePlugin()
@@ -98,6 +100,7 @@ function App() {
 
   return (
     <div className="flex h-screen w-full bg-background flex-col lg:flex-row overflow-hidden">
+      <PluginRunner />
       {/* Mobile Header */}
       <header className="mobile-header">
         <div className="flex items-center gap-3">

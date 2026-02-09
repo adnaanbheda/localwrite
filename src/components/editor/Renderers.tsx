@@ -129,5 +129,9 @@ export const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
         children = <u>{children}</u>
     }
 
-    return <span {...attributes}>{children}</span>
+    return (
+        <span {...attributes} className="text-foreground">
+            {children}
+        </span>
+    )
 }

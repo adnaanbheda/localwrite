@@ -19,7 +19,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
-    const { plugins, enablePlugin, disablePlugin, isPluginEnabled } = usePlugin()
+    const { plugins, enablePlugin, disablePlugin, isPluginEnabled, installPlugin } = usePlugin()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -98,6 +98,34 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-border">
+                                <Label>Add Plugin</Label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="GitHub URL or ESM link..."
+                                        className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background"
+                                        onKeyDown={async (e) => {
+                                            if (e.key === 'Enter') {
+                                                const target = e.target as HTMLInputElement;
+                                                if (target.value) {
+                                                    try {
+                                                        await installPlugin(target.value);
+                                                        target.value = '';
+                                                        alert('Plugin installed successfully!');
+                                                    } catch (err) {
+                                                        alert('Failed to install plugin. Check console for details.');
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                    Paste a link to a GitHub repo or .js file to install.
+                                </p>
                             </div>
                         </div>
 
