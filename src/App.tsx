@@ -1,10 +1,9 @@
-import { FileText, List, Menu, X } from 'lucide-react'
-import { useState } from 'react'
+
+import { Menu, X } from 'lucide-react'
+import { useCallback, useState } from 'react'
+import type { Descendant } from 'slate'
 import Editor from './components/Editor'
-import { FileExplorer } from './components/FileExplorer'
-import { TableOfContents } from './components/retroui/TableOfContents'
-import { ToggleGroup, ToggleGroupItem } from './components/retroui/ToggleGroup'
-import { Settings } from './components/Settings'
+import { Sidebar } from './components/Sidebar'
 import { usePlugin } from './contexts/PluginContext'
 import { useEditor } from './hooks/useEditor'
 import { useFileRestoration } from './hooks/useFileRestoration'
@@ -37,6 +36,9 @@ function App() {
   const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  const handleEditorChangeWrapped = useCallback((value: Descendant[]) => {
+    handleEditorChange(value);
+  }, [handleEditorChange]);
 
   const handleCreateFile = async () => {
     const name = prompt("Enter file name (without extension):");
@@ -52,84 +54,30 @@ function App() {
     }
   }
 
-  const SidebarContent = () => (
-    <>
-      <div className="flex-grow overflow-y-auto mb-4 flex flex-col no-scrollbar">
-        {dirHandle ? (
-          <>
-            <ToggleGroup
-              type="single"
-              value={sidebarTab}
-              onValueChange={(val) => {
-                if (val) setSidebarTab(val as any);
-              }}
-              className="flex flex-col items-stretch gap-1 mb-6 p-0 border-none bg-transparent"
-              variant="outlined"
-              size="default"
-            >
-              <ToggleGroupItem value="files" className="justify-start px-3" aria-label="Files">
-                <FileText className="w-4 h-4 mr-3" />
-                Files
-              </ToggleGroupItem>
-              <ToggleGroupItem value="outline" className="justify-start px-3" aria-label="Outline">
-                <List className="w-4 h-4 mr-3" />
-                Outline
-              </ToggleGroupItem>
-              {plugins.filter(p => isPluginEnabled(p.id) && p.renderSidebarIcon).map(plugin => (
-                <ToggleGroupItem key={plugin.id} value={plugin.id} className="justify-start px-3" aria-label={plugin.name}>
-                  {plugin.renderSidebarIcon!()}
-                  {plugin.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
 
-            {sidebarTab === 'files' ? (
-              <FileExplorer
-                items={items}
-                onSelectFile={(file) => {
-                  openFile(file);
-                  setIsMobileMenuOpen(false);
-                }}
-                onCreateFile={handleCreateFile}
-                currentFile={currentFile}
-              />
-            ) : sidebarTab === 'outline' ? (
-              <div className="h-full overflow-y-auto pr-2">
-                <TableOfContents />
-              </div>
-            ) : (
-              // Dynamic plugin rendering
-              (() => {
-                const activePlugin = plugins.find(p => p.id === sidebarTab);
-                if (activePlugin && activePlugin.renderSidebarContent) {
-                  return activePlugin.renderSidebarContent({
-                    dirHandle,
-                    currentFile,
-                    editorContent,
-                    onRestore: (content: string) => {
-                      handleRestoreVersion(content);
-                      setIsMobileMenuOpen(false);
-                    }
-                  });
-                }
-                return null;
-              })()
-            )}
-          </>
-        ) : (
-          <div className="text-sm text-muted-foreground p-4 text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
-            Select a folder in Settings to begin your focused writing session.
-          </div>
-        )}
-      </div>
-      <div className="mt-auto pt-6 border-t border-border">
-        <Settings
-          onSetFolder={setFolder}
-          folderName={folderName}
-        />
-      </div>
-    </>
-  )
+
+  // Common props for Sidebar
+  const sidebarProps = {
+    dirHandle,
+    items,
+    currentFile,
+    editorContent,
+    folderName,
+    sidebarTab,
+    setSidebarTab,
+    onSelectFile: (file: FileSystemFileHandle) => {
+      openFile(file);
+      setIsMobileMenuOpen(false);
+    },
+    onCreateFile: handleCreateFile,
+    onSetFolder: setFolder,
+    onRestoreVersion: (content: string) => {
+      handleRestoreVersion(content);
+      setIsMobileMenuOpen(false);
+    },
+    plugins,
+    isPluginEnabled
+  };
 
   return (
     <div className="flex h-screen w-full bg-background flex-col lg:flex-row overflow-hidden">
@@ -174,7 +122,7 @@ function App() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <SidebarContent />
+        <Sidebar {...sidebarProps} />
       </div>
 
       {/* Desktop Sidebar */}
@@ -182,14 +130,14 @@ function App() {
         <div className="mb-8 p-1">
           <span className="font-bold text-2xl font-head tracking-tighter">LocalWrite</span>
         </div>
-        <SidebarContent />
+        <Sidebar {...sidebarProps} />
       </div>
 
       <main className="flex-1 flex flex-col items-center w-full min-w-0 overflow-y-auto">
         <div className="editor-container">
           <Editor
             value={editorContent}
-            onChange={handleEditorChange}
+            onChange={handleEditorChangeWrapped}
             onHeadingActive={() => {
               if (sidebarTab === 'files') {
                 setSidebarTab('outline');
