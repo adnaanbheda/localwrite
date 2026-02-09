@@ -19,7 +19,6 @@ vi.mock('../lib/storage', async (importOriginal) => {
         verifyPermission: vi.fn().mockResolvedValue(true),
         getDirectoryHandle: vi.fn(),
         loadLastFile: vi.fn(),
-        getVersionHistoryEnabled: vi.fn().mockResolvedValue(false),
         saveVersion: vi.fn(),
         getVersions: vi.fn().mockResolvedValue([]),
     };

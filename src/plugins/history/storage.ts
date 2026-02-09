@@ -1,4 +1,3 @@
-import { get, set } from '@/lib/storage';
 
 export interface Version {
     id: string;
@@ -7,15 +6,6 @@ export interface Version {
     note?: string;
     versionFile: string;
     type?: 'manual' | 'auto';
-}
-
-export async function getVersionHistoryEnabled(workspaceId: string): Promise<boolean> {
-    const val = await get(`localwrite-ws-${workspaceId}-history-enabled`);
-    return val === true;
-}
-
-export async function setVersionHistoryEnabled(workspaceId: string, enabled: boolean): Promise<void> {
-    await set(`localwrite-ws-${workspaceId}-history-enabled`, enabled);
 }
 
 async function compress(content: string): Promise<Blob> {
@@ -72,62 +62,28 @@ export async function saveVersion(
 
         historyIndex.unshift(newVersion); // Add to beginning
 
+        // 3. Prune if auto-save (in-memory, before writing index)
+        if (type === 'auto') {
+            historyIndex = await pruneHistoryInMemory(historyDir, historyIndex, fileName);
+        }
+
+        // 4. Write Index ONCE
         const indexHandle = await historyDir.getFileHandle('history.json', { create: true });
         const indexWritable = await indexHandle.createWritable();
         await indexWritable.write(JSON.stringify(historyIndex, null, 2));
         await indexWritable.close();
-
-        // 3. Prune if auto-save
-        if (type === 'auto') {
-            await pruneHistory(dirHandle, fileName);
-        }
 
     } catch (error) {
         console.error("Failed to save version:", error);
     }
 }
 
-export async function getVersions(
-    dirHandle: FileSystemDirectoryHandle,
+async function pruneHistoryInMemory(
+    historyDir: FileSystemDirectoryHandle,
+    allVersions: Version[],
     fileName: string
 ): Promise<Version[]> {
     try {
-        const historyDir = await dirHandle.getDirectoryHandle('.history');
-        const indexHandle = await historyDir.getFileHandle('history.json');
-        const indexFile = await indexHandle.getFile();
-        const text = await indexFile.text();
-        const allVersions: Version[] = JSON.parse(text);
-
-        return allVersions.filter(v => v.fileName === fileName);
-    } catch (error) {
-        // console.warn("No history found for", fileName);
-        return [];
-    }
-}
-
-export async function getVersionContent(
-    dirHandle: FileSystemDirectoryHandle,
-    version: Version
-): Promise<string | null> {
-    try {
-        const historyDir = await dirHandle.getDirectoryHandle('.history');
-        const fileHandle = await historyDir.getFileHandle(version.versionFile);
-        const file = await fileHandle.getFile();
-        return await decompress(file);
-    } catch (error) {
-        console.error("Failed to load version content:", error);
-        return null;
-    }
-}
-
-async function pruneHistory(dirHandle: FileSystemDirectoryHandle, fileName: string) {
-    try {
-        const historyDir = await dirHandle.getDirectoryHandle('.history');
-        const indexHandle = await historyDir.getFileHandle('history.json');
-        const indexFile = await indexHandle.getFile();
-        const text = await indexFile.text();
-        let allVersions: Version[] = JSON.parse(text);
-
         // Filter for this file and separate manual vs auto
         const fileVersions = allVersions.filter(v => v.fileName === fileName);
         const otherVersions = allVersions.filter(v => v.fileName !== fileName);
@@ -135,7 +91,7 @@ async function pruneHistory(dirHandle: FileSystemDirectoryHandle, fileName: stri
         const manualVersions = fileVersions.filter(v => v.type !== 'auto');
         const autoVersions = fileVersions.filter(v => v.type === 'auto');
 
-        // Sort auto versions newest first (should already be, but ensure)
+        // Sort auto versions newest first (should already be)
         autoVersions.sort((a, b) => b.timestamp - a.timestamp);
 
         // Retention Policy:
@@ -163,9 +119,7 @@ async function pruneHistory(dirHandle: FileSystemDirectoryHandle, fileName: stri
         const keptAutoVersions = [...recentPool, ...dailyPool];
         const versionsToDelete = autoVersions.filter(v => !keptAutoVersions.includes(v));
 
-        if (versionsToDelete.length === 0) return;
-
-        // 4. Delete files
+        // 4. Delete files (side effect)
         for (const v of versionsToDelete) {
             try {
                 await historyDir.removeEntry(v.versionFile);
@@ -174,16 +128,47 @@ async function pruneHistory(dirHandle: FileSystemDirectoryHandle, fileName: stri
             }
         }
 
-        // 5. Update Index
+        // 5. Return new full index
         const newIndex = [...otherVersions, ...manualVersions, ...keptAutoVersions];
-        // Sort entire index by timestamp desc for UI
+        // Sort entire index by timestamp desc
         newIndex.sort((a, b) => b.timestamp - a.timestamp);
 
-        const indexWritable = await indexHandle.createWritable();
-        await indexWritable.write(JSON.stringify(newIndex, null, 2));
-        await indexWritable.close();
+        return newIndex;
 
     } catch (error) {
         console.error("Pruning failed:", error);
+        return allVersions; // Return original on error to be safe
+    }
+}
+
+export async function getVersions(
+    dirHandle: FileSystemDirectoryHandle,
+    fileName: string
+): Promise<Version[]> {
+    try {
+        const historyDir = await dirHandle.getDirectoryHandle('.history');
+        const indexHandle = await historyDir.getFileHandle('history.json');
+        const indexFile = await indexHandle.getFile();
+        const text = await indexFile.text();
+        const allVersions: Version[] = JSON.parse(text);
+
+        return allVersions.filter(v => v.fileName === fileName);
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getVersionContent(
+    dirHandle: FileSystemDirectoryHandle,
+    version: Version
+): Promise<string | null> {
+    try {
+        const historyDir = await dirHandle.getDirectoryHandle('.history');
+        const fileHandle = await historyDir.getFileHandle(version.versionFile);
+        const file = await fileHandle.getFile();
+        return await decompress(file);
+    } catch (error) {
+        console.error("Failed to load version content:", error);
+        return null;
     }
 }
