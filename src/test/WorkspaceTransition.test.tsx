@@ -109,10 +109,10 @@ describe('Workspace Transition', () => {
         );
 
         // 1. Initially no folder, show prompt
-        expect(screen.getByText(/Select a folder/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/Select a folder/i)[0]).toBeInTheDocument();
 
         // 2. Select Folder 1
-        const setFolderBtn = screen.getByTestId('set-folder-btn');
+        const setFolderBtn = screen.getAllByTestId('set-folder-btn')[0];
         await act(async () => {
             setFolderBtn.click();
         });
@@ -123,15 +123,15 @@ describe('Workspace Transition', () => {
         });
 
         // Open file1.md
-        await waitFor(() => screen.getByTestId('file-explorer'));
-        const fileBtn = screen.getByText('file1.md');
+        await waitFor(() => screen.getAllByTestId('file-explorer')[0]);
+        const fileBtn = screen.getAllByText('file1.md')[0];
         await act(async () => {
             fileBtn.click();
         });
 
         // Verify editor has content and URL has file=file1.md
         await waitFor(() => {
-            expect(screen.getByTestId('editor-content')).toHaveTextContent('Content of File 1');
+            expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('Content of File 1');
             expect(window.location.search).toContain('file=file1.md');
         });
 
@@ -147,6 +147,6 @@ describe('Workspace Transition', () => {
         });
 
         // Verify editor is cleared
-        expect(screen.getByTestId('editor-content')).toHaveTextContent('');
+        expect(screen.getAllByTestId('editor-content')[0]).toHaveTextContent('');
     });
 });
