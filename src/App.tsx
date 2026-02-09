@@ -1,6 +1,6 @@
 
 import { Menu, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { Sidebar } from './components/Sidebar'
@@ -39,6 +39,15 @@ function App() {
   const handleEditorChangeWrapped = useCallback((value: Descendant[]) => {
     handleEditorChange(value);
   }, [handleEditorChange]);
+
+  // Update window title based on folder name
+  useEffect(() => {
+    if (folderName) {
+      document.title = `localwrite | ${folderName}`;
+    } else {
+      document.title = 'localwrite';
+    }
+  }, [folderName]);
 
   const handleCreateFile = async () => {
     const name = prompt("Enter file name (without extension):");
