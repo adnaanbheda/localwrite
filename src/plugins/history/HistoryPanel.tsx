@@ -1,9 +1,10 @@
+import { Button } from '@/components/retroui/Button';
+import { SidebarAPI } from '@/components/SidebarAPI';
+import { serialize } from '@/lib/markdown';
+import { type Version, getVersionContent, getVersions, saveVersion } from '@/lib/storage';
 import { History, RotateCcw, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Descendant } from 'slate';
-import { serialize } from '../lib/markdown';
-import { type Version, getVersionContent, getVersions, saveVersion } from '../lib/storage';
-import { Button } from './retroui/Button';
 
 interface HistoryPanelProps {
     dirHandle: FileSystemDirectoryHandle | null;
@@ -52,17 +53,21 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
     }
 
     if (!dirHandle || !currentFile) {
-        return <div className="p-4 text-sm text-muted-foreground">Select a file to view history.</div>;
+        return (
+            <div className="p-4 text-sm text-muted-foreground text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
+                Select a file to view history.
+            </div>
+        );
     }
 
     return (
-        <div className="flex flex-col h-full bg-background">
-            <div className="p-4 border-b">
-                <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+        <div className="space-y-6">
+            <SidebarAPI.Header>
+                <div className="flex items-center gap-2 mb-4 px-2">
                     <History className="w-5 h-5" />
-                    History
-                </h3>
-                <div className="flex flex-col gap-2">
+                    <span className="font-bold text-lg">History</span>
+                </div>
+                <div className="flex flex-col gap-2 px-2">
                     <input
                         type="text"
                         placeholder="Commit message (optional)"
@@ -80,16 +85,16 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
                         Commit Change
                     </Button>
                 </div>
-            </div>
+            </SidebarAPI.Header>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <SidebarAPI.Group className="px-2">
                 {loading ? (
                     <div className="text-center text-sm text-muted-foreground">Loading history...</div>
                 ) : versions.length === 0 ? (
                     <div className="text-center text-sm text-muted-foreground">No versions saved yet.</div>
                 ) : (
                     versions.map((version) => (
-                        <div key={version.id} className="border rounded-lg p-3 text-sm space-y-2 bg-card">
+                        <div key={version.id} className="border rounded-lg p-3 text-sm space-y-2 bg-card mb-2 shadow-sm">
                             <div className="flex justify-between items-start">
                                 <span className="font-medium text-xs text-muted-foreground">
                                     {new Date(version.timestamp).toLocaleString()}
@@ -110,7 +115,7 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
                         </div>
                     ))
                 )}
-            </div>
+            </SidebarAPI.Group>
         </div>
     );
 }

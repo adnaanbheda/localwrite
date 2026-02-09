@@ -1,6 +1,6 @@
+import type { Plugin } from '@/lib/plugins/types';
 import { History } from 'lucide-react';
-import { HistoryPanel } from '../../components/HistoryPanel';
-import type { Plugin } from '../../lib/plugins/types';
+import { HistoryPanel } from './HistoryPanel';
 
 export const historyPlugin: Plugin = {
     id: 'history',

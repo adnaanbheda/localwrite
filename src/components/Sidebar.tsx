@@ -13,8 +13,8 @@ interface SidebarProps {
     currentFile: FileSystemFileHandle | null
     editorContent: Descendant[]
     folderName: string | null
-    sidebarTab: 'files' | 'outline' | 'history'
-    setSidebarTab: (tab: 'files' | 'outline' | 'history') => void
+    sidebarTab: 'files' | 'outline' | string
+    setSidebarTab: (tab: 'files' | 'outline' | string) => void
     onSelectFile: (file: FileSystemFileHandle) => void
     onCreateFile: () => void
     onSetFolder: () => void

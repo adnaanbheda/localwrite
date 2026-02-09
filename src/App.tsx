@@ -33,7 +33,7 @@ function App() {
   // initialization hook
   useFileRestoration(initFileSystem, openFile);
 
-  const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | 'history'>('files')
+  const [sidebarTab, setSidebarTab] = useState<'files' | 'outline' | string>('files')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleEditorChangeWrapped = useCallback((value: Descendant[]) => {
