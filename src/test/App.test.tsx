@@ -35,9 +35,7 @@ vi.mock('../lib/storage', async (importOriginal) => {
 vi.mock('../components/Editor', () => ({
     default: ({ value, onChange, ...props }: any) => {
         // Render simple text representation
-        console.log('[MockEditor] Render with key:', props.key);
         const textContent = value.map((n: any) => n.children[0].text).join('\n');
-        console.log('[MockEditor] Content:', textContent);
         return (
             <div data-testid="mock-editor" data-key={props.key}>
                 <div data-testid="editor-content">{textContent}</div>

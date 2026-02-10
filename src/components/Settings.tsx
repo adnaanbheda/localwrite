@@ -1,8 +1,9 @@
 import { Monitor, Moon, Settings as SettingsIcon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { usePlugin } from '../contexts/PluginContext'
+import { PluginManager } from './PluginManagerUI'
 import { useTheme } from './ThemeProvider'
-import { Switch } from './retroui/Switch'
+
 
 interface SettingsProps {
     onSetFolder: () => void
@@ -19,11 +20,16 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
-    const { plugins, enablePlugin, disablePlugin, isPluginEnabled, installPlugin } = usePlugin()
+    const { plugins } = usePlugin()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Element;
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(target) &&
+                !target.closest('[data-popover-content]')
+            ) {
                 setIsOpen(false)
             }
         }
@@ -36,7 +42,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     return (
         <div className="settings-container" ref={containerRef}>
             {isOpen && (
-                <div className="settings-popup">
+                <div className="settings-popup animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300">
                     <h4 className="mb-2 font-medium leading-none text-foreground">Settings</h4>
                     <p className="text-muted-foreground mb-4">Manage your preferences.</p>
 
@@ -81,51 +87,14 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                         <div className="space-y-4 pt-2 border-t border-border">
                             <div className="space-y-2">
                                 <Label>Plugins</Label>
-                                <div className="space-y-2">
-                                    {plugins.map(plugin => (
-                                        <div key={plugin.id} className="flex items-center justify-between p-2 border border-border rounded-md bg-secondary/20">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{plugin.name}</span>
-                                                <span className="text-xs text-muted-foreground">{plugin.description}</span>
-                                            </div>
-                                            <Switch
-                                                checked={isPluginEnabled(plugin.id)}
-                                                onCheckedChange={(checked) => {
-                                                    if (checked) enablePlugin(plugin.id);
-                                                    else disablePlugin(plugin.id);
-                                                }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2 pt-2 border-t border-border">
-                                <Label>Add Plugin</Label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        placeholder="GitHub URL or ESM link..."
-                                        className="flex-1 px-2 py-1 text-xs border border-border rounded bg-background"
-                                        onKeyDown={async (e) => {
-                                            if (e.key === 'Enter') {
-                                                const target = e.target as HTMLInputElement;
-                                                if (target.value) {
-                                                    try {
-                                                        await installPlugin(target.value);
-                                                        target.value = '';
-                                                        alert('Plugin installed successfully!');
-                                                    } catch (err) {
-                                                        alert('Failed to install plugin. Check console for details.');
-                                                    }
-                                                }
-                                            }
-                                        }}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-muted-foreground">
-                                    Paste a link to a GitHub repo or .js file to install.
-                                </p>
+                                <PluginManager>
+                                    <button
+                                        className="w-full flex items-center justify-between px-3 py-2 text-sm border border-border rounded-md bg-secondary/20 hover:bg-secondary/40 transition-colors"
+                                    >
+                                        <span>Manage Plugins</span>
+                                        <span className="text-xs text-muted-foreground">{plugins.length}</span>
+                                    </button>
+                                </PluginManager>
                             </div>
                         </div>
 

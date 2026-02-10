@@ -2,11 +2,14 @@ import { useEffect, useMemo, useRef } from 'react';
 import { usePlugin } from '../contexts/PluginContext';
 import { restoreInstalledPlugins } from '../lib/plugins/PluginLoader';
 import type { Plugin, PluginContext } from '../lib/plugins/types';
+import { ErrorBoundary } from './ErrorBoundary';
 
-// Individual Plugin Wrapper to handle Lifecycle (Init/Destroy)
 const PluginInstance = ({ plugin, context }: { plugin: Plugin, context: PluginContext }) => {
-    // Track keys set by this specific plugin instance
+    const { getPluginSetting, setPluginSetting } = usePlugin();
+
+    // Track keys set by this specific plugin instance for auto-cleanup
     const setKeysRef = useRef<string[]>([]);
+    const stylesheetsRef = useRef<string[]>([]);
 
     // Create a scoped context for this plugin
     const scopedContext = useMemo(() => ({
@@ -15,14 +18,23 @@ const PluginInstance = ({ plugin, context }: { plugin: Plugin, context: PluginCo
             const keys = Object.keys(vars);
             setKeysRef.current.push(...keys);
             context.setThemeVars(vars);
-        }
-    }), [context]);
+        },
+        loadStylesheet: (url: string) => {
+            stylesheetsRef.current.push(url);
+            context.loadStylesheet(url);
+        },
+        getSetting: (key: string) => getPluginSetting(plugin.id, key),
+        setSetting: (key: string, value: string) => setPluginSetting(plugin.id, key, value),
+        prompt: async (msg: string, def?: string) => window.prompt(msg, def)
+    }), [context, plugin.id, getPluginSetting, setPluginSetting]);
 
     useEffect(() => {
+        let isInitialized = false;
         // Initialize
         if (plugin.initialize) {
             try {
                 plugin.initialize(scopedContext);
+                isInitialized = true;
             } catch (e) {
                 console.error(`Failed to initialize plugin ${plugin.id}:`, e);
             }
@@ -32,10 +44,16 @@ const PluginInstance = ({ plugin, context }: { plugin: Plugin, context: PluginCo
         return () => {
             // Auto-cleanup theme vars
             if (setKeysRef.current.length > 0) {
-                context.unsetThemeVars(setKeysRef.current);
+                context.unsetThemeVars([...setKeysRef.current]);
+                setKeysRef.current = [];
+            }
+            // Auto-cleanup stylesheets
+            if (stylesheetsRef.current.length > 0) {
+                stylesheetsRef.current.forEach(url => context.removeStylesheet(url));
+                stylesheetsRef.current = [];
             }
 
-            if (plugin.destroy) {
+            if (isInitialized && plugin.destroy) {
                 try {
                     plugin.destroy(scopedContext);
                 } catch (e) {
@@ -49,38 +67,43 @@ const PluginInstance = ({ plugin, context }: { plugin: Plugin, context: PluginCo
 };
 
 export function PluginRunner() {
-    const { plugins, enabledPlugins, setThemeVars, unsetThemeVars } = usePlugin();
-    // const { dirHandle, items, folderName } = useFileSystem();
-    // const { editorContent, currentFile, handleRestoreVersion } = useEditor();
+    const {
+        plugins,
+        enabledPlugins,
+        setThemeVars,
+        unsetThemeVars,
+        loadStylesheet,
+        removeStylesheet
+    } = usePlugin();
 
-    // 1. Restore external plugins on mount
+    // Restore external plugins on mount
     useEffect(() => {
         restoreInstalledPlugins();
     }, []);
 
     // Stabilize context to prevent unnecessary re-initializations
-    // Ideally we use useMemo, but dependencies like 'items' change often.
-    // For now, let's pass a fresh object but PluginInstance only depends on what it uses?
-    // Actually, if we pass a new object every time, useEffect triggers every render.
-    // We need a stable context object or useRef.
-    // However, plugins MIGHT need fresh state.
-    // "Headless" plugins usually subscribe to events or global state, 
-    // or we provide getters.
-    // For this MVP, let's provide a proxy or just the setters which are stable.
-    const context: PluginContext = {
+    // These are the "raw" methods that handle the actual side effects
+    const context: PluginContext = useMemo(() => ({
         setThemeVars,
         unsetThemeVars,
-    };
+        loadStylesheet,
+        removeStylesheet,
+        // Dummies for scoped methods
+        getSetting: () => null,
+        setSetting: () => { },
+        prompt: async (msg, def) => window.prompt(msg, def)
+    }), [setThemeVars, unsetThemeVars, loadStylesheet, removeStylesheet]);
 
     return (
         <>
             {plugins.map(plugin => (
                 enabledPlugins.includes(plugin.id) && (
-                    <PluginInstance
-                        key={plugin.id}
-                        plugin={plugin}
-                        context={context}
-                    />
+                    <ErrorBoundary key={plugin.id} name={`Plugin:${plugin.name}`}>
+                        <PluginInstance
+                            plugin={plugin}
+                            context={context}
+                        />
+                    </ErrorBoundary>
                 )
             ))}
         </>

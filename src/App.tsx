@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Descendant } from 'slate'
 import Editor from './components/Editor'
 import { PluginRunner } from './components/PluginRunner'
+import { Toaster } from './components/retroui/Sonner'
 import { Sidebar } from './components/Sidebar'
 import { usePlugin } from './contexts/PluginContext'
 import { useEditor } from './hooks/useEditor'
@@ -167,6 +168,7 @@ function App() {
           />
         </div>
       </main>
+      <Toaster />
     </div>
   )
 }

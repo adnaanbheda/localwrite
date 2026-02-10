@@ -4,6 +4,13 @@ export interface PluginContext {
   // Core app methods
   setThemeVars: (vars: Record<string, string>) => void;
   unsetThemeVars: (keys: string[]) => void;
+  loadStylesheet: (url: string) => void;
+  removeStylesheet: (url: string) => void;
+
+  // Persistence & Input
+  getSetting: (key: string) => string | null;
+  setSetting: (key: string, value: string) => void;
+  prompt: (message: string, defaultValue?: string) => Promise<string | null>;
 }
 
 export interface PluginSidebarProps {

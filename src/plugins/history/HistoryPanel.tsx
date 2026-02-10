@@ -41,7 +41,6 @@ export function HistoryPanel({ dirHandle, currentFile, editorContent, onRestore 
 
             if (timeSinceLastSave > AUTO_SAVE_INTERVAL) {
                 // Trigger auto-save
-                console.log("Auto-saving history...");
                 saveVersion(dirHandle, currentFile.name, currentMarkdown, 'Auto-save', 'auto')
                     .then(() => {
                         lastAutoSaveTime.current = now;

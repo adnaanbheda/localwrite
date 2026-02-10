@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { installPlugin, restoreInstalledPlugins } from '../lib/plugins/PluginLoader';
+import { installPlugin, restoreInstalledPlugins, uninstallPlugin as uninstallPluginFromLoader } from '../lib/plugins/PluginLoader';
 import { pluginManager } from '../lib/plugins/PluginManager';
 import type { Plugin } from '../lib/plugins/types';
 
@@ -13,6 +13,13 @@ interface PluginContextType {
   isLoading: boolean;
   setThemeVars: (vars: Record<string, string>) => void;
   unsetThemeVars: (keys: string[]) => void;
+  loadStylesheet: (url: string) => void;
+  removeStylesheet: (url: string) => void;
+
+  // App-level methods (not exposed to plugins directly, but used by Runner/Settings)
+  uninstallPlugin: (pluginId: string) => void;
+  getPluginSetting: (pluginId: string, key: string) => string | null;
+  setPluginSetting: (pluginId: string, key: string, value: string) => void;
 }
 
 const PluginContext = createContext<PluginContextType | undefined>(undefined);
@@ -22,39 +29,61 @@ export function PluginProvider({ children }: { children: ReactNode }) {
   const [enabledPlugins, setEnabledPlugins] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load initial state from local storage or defaults
+  // Settings: Record<pluginId, Record<key, value>>
+  const [settings, setSettings] = useState<Record<string, Record<string, string>>>({});
+
+  // Load initial state
   useEffect(() => {
     const loadPlugins = async () => {
-      // 1. Restore installed dynamic plugins
       await restoreInstalledPlugins();
       setPlugins(pluginManager.getPlugins());
 
-      // 2. Restore enabled state
-      const stored = localStorage.getItem('enabled_plugins');
-      if (stored) {
-        setEnabledPlugins(JSON.parse(stored));
-      } else {
-        // Default enabled plugins
-        setEnabledPlugins(['history']);
-      }
+      const storedEnabled = localStorage.getItem('enabled_plugins');
+      if (storedEnabled) setEnabledPlugins(JSON.parse(storedEnabled));
+      else setEnabledPlugins(['history']);
+
+      const storedSettings = localStorage.getItem('plugin_settings');
+      if (storedSettings) setSettings(JSON.parse(storedSettings));
+
       setIsLoading(false);
     };
     loadPlugins();
   }, []);
 
-  const saveState = (plugins: string[]) => {
-    localStorage.setItem('enabled_plugins', JSON.stringify(plugins));
-    setEnabledPlugins(plugins);
+  const saveEnabledState = (newEnabled: string[]) => {
+    localStorage.setItem('enabled_plugins', JSON.stringify(newEnabled));
+    setEnabledPlugins(newEnabled);
+  };
+
+  const saveSettingsState = (newSettings: Record<string, Record<string, string>>) => {
+    localStorage.setItem('plugin_settings', JSON.stringify(newSettings));
+    setSettings(newSettings);
   };
 
   const enablePlugin = (pluginId: string) => {
     if (!enabledPlugins.includes(pluginId)) {
-      saveState([...enabledPlugins, pluginId]);
+      saveEnabledState([...enabledPlugins, pluginId]);
     }
   };
 
   const disablePlugin = (pluginId: string) => {
-    saveState(enabledPlugins.filter(id => id !== pluginId));
+    saveEnabledState(enabledPlugins.filter(id => id !== pluginId));
+  };
+
+  const uninstallPlugin = (pluginId: string) => {
+    // 1. Disable
+    disablePlugin(pluginId);
+
+    // 2. Remove settings
+    const newSettings = { ...settings };
+    delete newSettings[pluginId];
+    saveSettingsState(newSettings);
+
+    // 3. Remove from installed list (localStorage) & Manager
+    uninstallPluginFromLoader(pluginId);
+
+    // 4. Update local state
+    setPlugins(pluginManager.getPlugins());
   };
 
   const isPluginEnabled = (pluginId: string) => {
@@ -67,12 +96,22 @@ export function PluginProvider({ children }: { children: ReactNode }) {
       const plugin = await installPlugin(url);
       if (plugin) {
         setPlugins(pluginManager.getPlugins());
-        // Auto-enable newly installed plugins?
         enablePlugin(plugin.id);
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getPluginSetting = (pluginId: string, key: string) => {
+    return settings[pluginId]?.[key] || null;
+  };
+
+  const setPluginSetting = (pluginId: string, key: string, value: string) => {
+    const newSettings = { ...settings };
+    if (!newSettings[pluginId]) newSettings[pluginId] = {};
+    newSettings[pluginId][key] = value;
+    saveSettingsState(newSettings);
   };
 
   return (
@@ -83,19 +122,30 @@ export function PluginProvider({ children }: { children: ReactNode }) {
       disablePlugin,
       isPluginEnabled,
       installPlugin: handleInstallPlugin,
+      uninstallPlugin,
       isLoading,
-      setThemeVars: (vars: Record<string, string>) => {
+      setThemeVars: (vars) => {
         const root = document.documentElement;
-        Object.entries(vars).forEach(([key, value]) => {
-          root.style.setProperty(key, value);
-        });
+        Object.entries(vars).forEach(([key, value]) => root.style.setProperty(key, value));
       },
-      unsetThemeVars: (keys: string[]) => {
+      unsetThemeVars: (keys) => {
         const root = document.documentElement;
-        keys.forEach(key => {
-          root.style.removeProperty(key);
-        });
-      }
+        keys.forEach(key => root.style.removeProperty(key));
+      },
+      loadStylesheet: (url) => {
+        if (!document.querySelector(`link[href="${url}"]`)) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = url;
+          document.head.appendChild(link);
+        }
+      },
+      removeStylesheet: (url) => {
+        const link = document.querySelector(`link[href="${url}"]`);
+        if (link) document.head.removeChild(link);
+      },
+      getPluginSetting,
+      setPluginSetting
     }}>
       {children}
     </PluginContext.Provider>

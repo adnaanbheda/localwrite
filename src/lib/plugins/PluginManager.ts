@@ -18,6 +18,10 @@ class PluginManager {
   getPlugin(id: string): Plugin | undefined {
     return this.plugins.get(id);
   }
+
+  unregister(id: string) {
+    this.plugins.delete(id);
+  }
 }
 
 export const pluginManager = new PluginManager();

@@ -46,10 +46,13 @@ export async function loadPluginFromUrl(url: string): Promise<Plugin | null> {
     }
 }
 
+const pluginUrlMap = new Map<string, string>();
+
 export async function installPlugin(url: string) {
     const plugin = await loadPluginFromUrl(url);
     if (plugin) {
         pluginManager.register(plugin);
+        pluginUrlMap.set(plugin.id, url);
 
         // Persist the URL so we can reload it next time
         const installedUrls = JSON.parse(localStorage.getItem('installed_plugin_urls') || '[]');
@@ -68,9 +71,24 @@ export async function restoreInstalledPlugins() {
             const plugin = await loadPluginFromUrl(url);
             if (plugin) {
                 pluginManager.register(plugin);
+                pluginUrlMap.set(plugin.id, url);
             }
         } catch (e) {
             console.error(`Failed to restore plugin from ${url}`, e);
         }
+    }
+}
+
+export function uninstallPlugin(pluginId: string) {
+    // 1. Unregister from manager
+    pluginManager.unregister(pluginId);
+
+    // 2. Remove from persistent storage
+    const url = pluginUrlMap.get(pluginId);
+    if (url) {
+        const installedUrls = JSON.parse(localStorage.getItem('installed_plugin_urls') || '[]');
+        const newInstalledUrls = installedUrls.filter((u: string) => u !== url);
+        localStorage.setItem('installed_plugin_urls', JSON.stringify(newInstalledUrls));
+        pluginUrlMap.delete(pluginId);
     }
 }
