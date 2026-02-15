@@ -11,6 +11,7 @@ describe('PluginManager', () => {
         const plugin: Plugin = {
             id: 'test-plugin',
             name: 'Test Plugin',
+            version: '1.0.0',
             description: 'A test plugin'
         };
 
@@ -26,6 +27,7 @@ describe('PluginManager', () => {
         const plugin: Plugin = {
             id: 'duplicate-plugin',
             name: 'Duplicate',
+            version: '1.0.0',
             description: ''
         };
 

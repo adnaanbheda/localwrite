@@ -7,6 +7,7 @@ import { PluginProvider, usePlugin } from './PluginContext';
 const mockPlugin = {
     id: 'ctx-test',
     name: 'Context Test',
+    version: '1.0.0',
     description: 'Testing Context'
 };
 
