@@ -100,7 +100,14 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                         <div className="space-y-2 pt-2 border-t border-border">
                             <div className="flex items-center justify-between">
                                 <span className="text-foreground">About</span>
-                                <span className="text-xs text-muted-foreground">v{__APP_VERSION__}</span>
+                                <a
+                                    href={`https://github.com/adnaanbheda/localwrite/releases/tag/v${__APP_VERSION__}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+                                >
+                                    v{__APP_VERSION__}
+                                </a>
                             </div>
                         </div>
                     </div>
