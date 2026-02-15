@@ -1,8 +1,9 @@
 import { Monitor, Moon, Settings as SettingsIcon, Sun } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { usePlugin } from '../contexts/PluginContext'
+import { PluginManager } from './PluginManagerUI'
 import { useTheme } from './ThemeProvider'
-import { Switch } from './retroui/Switch'
+
 
 interface SettingsProps {
     onSetFolder: () => void
@@ -19,11 +20,16 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
-    const { plugins, enablePlugin, disablePlugin, isPluginEnabled } = usePlugin()
+    const { plugins } = usePlugin()
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Element;
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(target) &&
+                !target.closest('[data-popover-content]')
+            ) {
                 setIsOpen(false)
             }
         }
@@ -36,7 +42,7 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     return (
         <div className="settings-container" ref={containerRef}>
             {isOpen && (
-                <div className="settings-popup">
+                <div className="settings-popup animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300">
                     <h4 className="mb-2 font-medium leading-none text-foreground">Settings</h4>
                     <p className="text-muted-foreground mb-4">Manage your preferences.</p>
 
@@ -81,23 +87,14 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                         <div className="space-y-4 pt-2 border-t border-border">
                             <div className="space-y-2">
                                 <Label>Plugins</Label>
-                                <div className="space-y-2">
-                                    {plugins.map(plugin => (
-                                        <div key={plugin.id} className="flex items-center justify-between p-2 border border-border rounded-md bg-secondary/20">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium">{plugin.name}</span>
-                                                <span className="text-xs text-muted-foreground">{plugin.description}</span>
-                                            </div>
-                                            <Switch
-                                                checked={isPluginEnabled(plugin.id)}
-                                                onCheckedChange={(checked) => {
-                                                    if (checked) enablePlugin(plugin.id);
-                                                    else disablePlugin(plugin.id);
-                                                }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <PluginManager>
+                                    <button
+                                        className="w-full flex items-center justify-between px-3 py-2 text-sm border border-border rounded-md bg-secondary/20 hover:bg-secondary/40 transition-colors"
+                                    >
+                                        <span>Manage Plugins</span>
+                                        <span className="text-xs text-muted-foreground">{plugins.length}</span>
+                                    </button>
+                                </PluginManager>
                             </div>
                         </div>
 

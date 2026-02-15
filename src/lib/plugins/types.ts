@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
 
 export interface PluginContext {
-  // Can be expanded to provide core app methods
+  // Core app methods
+  setThemeVars: (vars: Record<string, string>) => void;
+  unsetThemeVars: (keys: string[]) => void;
+  loadStylesheet: (url: string) => void;
+  removeStylesheet: (url: string) => void;
+
+  // Persistence & Input
+  getSetting: (key: string) => string | null;
+  setSetting: (key: string, value: string) => void;
+  prompt: (message: string, defaultValue?: string) => Promise<string | null>;
 }
 
 export interface PluginSidebarProps {
@@ -14,12 +23,14 @@ export interface PluginSidebarProps {
 export interface Plugin {
   id: string;
   name: string;
+  version: string;
   description: string;
+
+  // Lifecycle
+  initialize?: (context: PluginContext) => void;
+  destroy?: (context: PluginContext) => void;
 
   // Render methods
   renderSidebarIcon?: () => ReactNode;
   renderSidebarContent?: (props: PluginSidebarProps) => ReactNode;
-
-  // Initialization
-  initialize?: (context: PluginContext) => void;
 }
