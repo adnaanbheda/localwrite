@@ -7,18 +7,36 @@ import type { Plugin } from './types';
 export function normalizePluginUrl(inputUrl: string): string {
     let url = inputUrl.trim();
 
-    // If it's a bare GitHub repo URL, try to point to a reasonable default entry point via esm.sh
-    // e.g. https://github.com/user/repo -> https://esm.sh/gh/user/repo/index.js
+    // 1. Handle "Raw" URLs (direct links to .js files on GitHub/Gist)
+    // These need domain swap to githack.com for CORS and Content-Type: application/javascript
+    if (url.includes('raw.githubusercontent.com') || url.includes('gist.githubusercontent.com')) {
+        return url.replace('raw.githubusercontent.com', 'raw.githack.com')
+            .replace('gist.githubusercontent.com', 'gist.githack.com');
+    }
+
+    // 2. Handle Gist "Home" URLs (https://gist.github.com/user/id)
+    if (url.includes('gist.github.com')) {
+        // Convert to githack raw URL. Githack for Gists: https://gist.githack.com/[user]/[id]/raw/
+        // Note: Trailing slash is important for githack to guess the entry file if there's only one.
+        url = url.replace('gist.github.com', 'gist.githack.com');
+        if (!url.endsWith('/')) url += '/';
+        if (!url.includes('/raw')) url += 'raw/';
+        return url;
+    }
+
+    // 3. Handle GitHub Repo "Home" URLs (https://github.com/user/repo)
     if (url.startsWith('https://github.com/')) {
         const repoPath = url.replace('https://github.com/', '');
-        // We'll assume the user wants the 'main' branch and 'dist/index.js' or 'mod.js'
-        // For now, let's guide the user to paste a direct link or handle a specific convention.
-        // Let's try to infer:
-        return `https://esm.sh/gh/${repoPath}@main/dist/index.js`;
+        // Route through esm.sh for ESM transformation and CORS headers
+        // esm.sh handles finding index.js/main/etc for you.
+        return `https://esm.sh/gh/${repoPath}`;
     }
 
     return url;
 }
+
+
+
 
 export async function loadPluginFromUrl(url: string): Promise<Plugin | null> {
     try {
@@ -49,13 +67,25 @@ export async function loadPluginFromUrl(url: string): Promise<Plugin | null> {
 const pluginUrlMap = new Map<string, string>();
 
 export async function installPlugin(url: string) {
+    // Check if URL is already installed to avoid redundant loads
+    const installedUrls = JSON.parse(localStorage.getItem('installed_plugin_urls') || '[]');
+    if (installedUrls.includes(url)) {
+        console.warn(`Plugin from ${url} is already installed.`);
+        return null;
+    }
+
     const plugin = await loadPluginFromUrl(url);
     if (plugin) {
+        // Double check against ID in case different URLs point to same plugin ID
+        if (pluginManager.getPlugins().some(p => p.id === plugin.id)) {
+            console.warn(`Plugin with ID ${plugin.id} is already registered.`);
+            return plugin;
+        }
+
         pluginManager.register(plugin);
         pluginUrlMap.set(plugin.id, url);
 
         // Persist the URL so we can reload it next time
-        const installedUrls = JSON.parse(localStorage.getItem('installed_plugin_urls') || '[]');
         if (!installedUrls.includes(url)) {
             installedUrls.push(url);
             localStorage.setItem('installed_plugin_urls', JSON.stringify(installedUrls));
