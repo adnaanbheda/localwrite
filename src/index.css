@@ -117,7 +117,7 @@
   }
 
   .settings-popup {
-    @apply absolute bottom-full left-0 mb-2 w-56 rounded-md border border-border bg-card p-4 shadow-lg text-sm;
+    @apply absolute bottom-full left-0 mb-2 w-80 rounded-md border border-border bg-card p-8 shadow-xl text-sm;
   }
 
   .settings-button {
@@ -142,5 +142,57 @@
 
   .theme-toggle-btn-inactive {
     @apply text-muted-foreground hover:text-foreground;
+  }
+
+  /* Dark Theme Overrides */
+  html.dark {
+    --radius: 0;
+    --background: #1a1a1a;
+    --foreground: #f5f5f5;
+    --card: #242424;
+    --card-foreground: #f5f5f5;
+    --primary: #ffdb33;
+    --primary-hover: #ffcc00;
+    --primary-foreground: #000;
+    --secondary: #3a3a3a;
+    --secondary-foreground: #f5f5f5;
+    --muted: #3f3f46;
+    --muted-foreground: #a0a0a0;
+    --accent: #fae583;
+    --accent-foreground: #000;
+    --destructive: #e63946;
+    --destructive-foreground: #fff;
+    --border: #3a3a3a;
+  }
+
+  /* Force all buttons, text, and SVG icons to white in dark mode */
+  html.dark button,
+  html.dark a,
+  html.dark span,
+  html.dark label,
+  html.dark p,
+  html.dark h1,
+  html.dark h2,
+  html.dark h3,
+  html.dark h4,
+  html.dark li,
+  html.dark svg {
+    color: #ffffff !important;
+    border-color: #ffffff !important;
+  }
+
+  /* Interactive feedback: turn text/icons black on hover, click, or when toggled 'on' */
+  html.dark button:hover,
+  html.dark button:active,
+  html.dark button:active svg,
+  html.dark button:hover svg,
+  html.dark button[data-state=on],
+  html.dark button[data-state=on] svg {
+    color: #000000 !important;
+  }
+
+  /* Remove shadows that clash in dark mode */
+  html.dark * {
+    box-shadow: none !important;
   }
 }

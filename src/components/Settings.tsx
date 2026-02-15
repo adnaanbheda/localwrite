@@ -89,10 +89,9 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                                 <Label>Plugins</Label>
                                 <PluginManager>
                                     <button
-                                        className="w-full flex items-center justify-between px-3 py-2 text-sm border border-border rounded-md bg-secondary/20 hover:bg-secondary/40 transition-colors"
+                                        className="settings-action-button"
                                     >
-                                        <span>Manage Plugins</span>
-                                        <span className="text-xs text-muted-foreground">{plugins.length}</span>
+                                        Manage Plugins ({plugins.length})
                                     </button>
                                 </PluginManager>
                             </div>
