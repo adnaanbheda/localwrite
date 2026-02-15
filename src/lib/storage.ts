@@ -40,9 +40,23 @@ export async function get(key: string): Promise<any> {
 
 export async function getDirectoryHandle(): Promise<FileSystemDirectoryHandle | null> {
     try {
-        const handle = await window.showDirectoryPicker();
-        return handle;
-    } catch (error) {
+        if ('showDirectoryPicker' in window) {
+            const handle = await window.showDirectoryPicker();
+            return handle;
+        }
+
+        // Fallback for Safari/OPFS
+        if ('storage' in navigator && 'getDirectory' in navigator.storage) {
+            return await navigator.storage.getDirectory();
+        }
+
+        console.error("File System Access API not supported in this browser.");
+        return null;
+    } catch (error: any) {
+        // User activation is required for showDirectoryPicker, but not always for getDirectory.
+        // If it's an AbortError, the user just closed the picker.
+        if (error.name === 'AbortError') return null;
+
         console.error("Error accessing directory:", error);
         return null;
     }
@@ -52,14 +66,25 @@ export async function verifyPermission(
     fileHandle: FileSystemHandle,
     readWrite: boolean
 ) {
+    // OPFS handles (from getDirectory) don't require or support queryPermission/requestPermission
+    // They are always granted within the origin.
+    if (!fileHandle.queryPermission) {
+        return true;
+    }
+
     const options: FileSystemHandlePermissionDescriptor = {};
     if (readWrite) {
         options.mode = "readwrite";
     }
-    if ((await fileHandle.queryPermission(options)) === "granted") {
-        return true;
-    }
-    if ((await fileHandle.requestPermission(options)) === "granted") {
+    try {
+        if ((await fileHandle.queryPermission(options)) === "granted") {
+            return true;
+        }
+        if ((await fileHandle.requestPermission(options)) === "granted") {
+            return true;
+        }
+    } catch (e) {
+        // Fallback for browsers that might not support these methods on certain handles
         return true;
     }
     return false;

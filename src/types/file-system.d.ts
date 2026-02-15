@@ -5,6 +5,14 @@ declare global {
         showDirectoryPicker(): Promise<FileSystemDirectoryHandle>;
     }
 
+    interface Navigator {
+        storage: NavigatorStorage;
+    }
+
+    interface NavigatorStorage {
+        getDirectory(): Promise<FileSystemDirectoryHandle>;
+    }
+
     interface FileSystemHandle {
         kind: 'file' | 'directory';
         name: string;
