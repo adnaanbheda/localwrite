@@ -1,6 +1,7 @@
 import { FileText, List } from 'lucide-react';
+import { memo, useMemo } from 'react';
 import type { Descendant } from 'slate';
-import type { Plugin } from '../lib/plugins/types'; // Import Plugin type
+import type { Plugin } from '../lib/plugins/types';
 import type { FileSystemItem } from '../lib/storage';
 import { FileExplorer } from './FileExplorer';
 import { Settings } from './Settings';
@@ -24,7 +25,7 @@ interface SidebarProps {
     isPluginEnabled: (id: string) => boolean
 }
 
-export function Sidebar({
+export const Sidebar = memo(({
     dirHandle,
     items,
     currentFile,
@@ -38,11 +39,11 @@ export function Sidebar({
     onRestoreVersion,
     plugins,
     isPluginEnabled
-}: SidebarProps) {
-    const staticTabs = [
+}: SidebarProps) => {
+    const staticTabs = useMemo(() => [
         { id: 'files', icon: FileText, label: 'Files' },
         { id: 'outline', icon: List, label: 'Outline' }
-    ];
+    ], []);
 
     return (
         <SidebarAPI.Root>
@@ -112,6 +113,6 @@ export function Sidebar({
             </SidebarAPI.Footer>
         </SidebarAPI.Root>
     )
-}
+})
 
 

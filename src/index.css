@@ -81,7 +81,7 @@
 
 @layer components {
   .sidebar-container {
-    @apply h-full w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex transition-all;
+    @apply h-full w-64 flex-shrink-0 flex flex-col border-r border-border bg-card p-6 hidden lg:flex;
   }
 
   .mobile-header {
@@ -114,7 +114,7 @@
   }
 
   .editor-wrapper {
-    @apply border border-border rounded-lg overflow-hidden bg-background shadow-sm w-full;
+    @apply border border-border rounded-lg overflow-hidden bg-background shadow-sm w-full min-h-[50vh] lg:min-h-[80vh];
   }
 
   .settings-container {

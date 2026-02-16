@@ -1,5 +1,5 @@
 import isHotkey from 'is-hotkey'
-import { type KeyboardEvent, useCallback, useEffect, useMemo } from 'react'
+import { type KeyboardEvent, memo, useCallback, useEffect, useMemo } from 'react'
 import {
     createEditor,
     type Descendant,
@@ -37,7 +37,7 @@ interface EditorProps {
     onHeadingActive?: () => void
 }
 
-const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
+const Editor = memo(({ value, onChange, onHeadingActive }: EditorProps) => {
     const renderElement = useCallback(
         (props: RenderElementProps) => <Element {...props} />,
         []
@@ -48,22 +48,22 @@ const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
     )
     const editor = useMemo(() => withShortcuts(withHistory(withReact(createEditor()))), [])
 
-    // Scroll to hash on load/update
+    // Scroll to hash only when hash changes or the entire file is swapped (not on content change)
     useEffect(() => {
         const hash = window.location.hash
         if (hash) {
-            // Short timeout to ensure DOM is ready
-            setTimeout(() => {
+            const timer = setTimeout(() => {
                 const id = hash.substring(1)
                 const element = document.getElementById(id)
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth' })
                 }
             }, 100)
+            return () => clearTimeout(timer);
         }
-    }, [value]) // Re-run when value changes (content loaded)
+    }, []) // Run once on mount
 
-    const handleChange = (newValue: Descendant[]) => {
+    const handleChange = useCallback((newValue: Descendant[]) => {
         onChange(newValue)
 
         // Check if selection is in a heading
@@ -76,7 +76,7 @@ const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
                 onHeadingActive()
             }
         }
-    }
+    }, [editor, onChange, onHeadingActive]) // Memoized callback
 
     return (
         <Slate
@@ -140,6 +140,8 @@ const Editor = ({ value, onChange, onHeadingActive }: EditorProps) => {
             </div>
         </Slate>
     )
-}
+})
+
+Editor.displayName = 'Editor'
 
 export default Editor
