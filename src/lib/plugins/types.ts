@@ -25,6 +25,7 @@ export interface Plugin {
   name: string;
   version: string;
   description: string;
+  category?: 'theme' | string;
 
   // Lifecycle
   initialize?: (context: PluginContext) => void;

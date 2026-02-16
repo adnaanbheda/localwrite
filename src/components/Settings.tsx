@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { usePlugin } from '../contexts/PluginContext'
 import { PluginManager } from './PluginManagerUI'
 import { useTheme } from './ThemeProvider'
+import { Button } from './retroui/Button'
+import { ToggleGroup, ToggleGroupItem } from './retroui/ToggleGroup'
 
 
 interface SettingsProps {
@@ -20,7 +22,12 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
     const [isOpen, setIsOpen] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
     const { theme, setTheme } = useTheme()
-    const { plugins } = usePlugin()
+    const { plugins, enabledPlugins } = usePlugin()
+
+    const isCustomThemeActive = plugins.some(p =>
+        (p.category === 'theme' || p.id.startsWith('theme-')) &&
+        enabledPlugins.includes(p.id)
+    );
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -49,50 +56,55 @@ export function Settings({ onSetFolder, folderName }: SettingsProps) {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-xs font-medium leading-none">Local Storage</label>
-                            <button
+                            <Button
+                                variant="secondary"
                                 onClick={onSetFolder}
                                 className="settings-action-button"
                             >
                                 {folderName ? `Using: ${folderName}` : "Set Content Folder"}
-                            </button>
+                            </Button>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-xs font-medium leading-none">Appearance</label>
-                            <div className="theme-toggle-group">
-                                <button
-                                    onClick={() => setTheme("light")}
-                                    className={`theme-toggle-btn ${theme === 'light' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
-                                    title="Light"
-                                >
-                                    <Sun className="w-3 h-3" />
-                                </button>
-                                <button
-                                    onClick={() => setTheme("dark")}
-                                    className={`theme-toggle-btn ${theme === 'dark' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
-                                    title="Dark"
-                                >
-                                    <Moon className="w-3 h-3" />
-                                </button>
-                                <button
-                                    onClick={() => setTheme("system")}
-                                    className={`theme-toggle-btn ${theme === 'system' ? 'theme-toggle-btn-active' : 'theme-toggle-btn-inactive'}`}
-                                    title="System"
-                                >
-                                    <Monitor className="w-3 h-3" />
-                                </button>
-                            </div>
+                            <ToggleGroup
+                                type="single"
+                                value={theme}
+                                onValueChange={(value: string) => {
+                                    if (value) setTheme(value as any);
+                                }}
+                                variant="outlined"
+                                size="sm"
+                                disabled={isCustomThemeActive}
+                                className="w-full bg-secondary/30 p-1 rounded-md border-2 border-border disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <ToggleGroupItem value="light" title="Light" className="flex-1">
+                                    <Sun className="w-4 h-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="dark" title="Dark" className="flex-1">
+                                    <Moon className="w-4 h-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="system" title="System" className="flex-1">
+                                    <Monitor className="w-4 h-4" />
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                            {isCustomThemeActive && (
+                                <p className="text-[10px] text-muted-foreground mt-1 italic">
+                                    Managed by active theme plugin
+                                </p>
+                            )}
                         </div>
 
                         <div className="space-y-4 pt-2 border-t border-border">
                             <div className="space-y-2">
                                 <Label>Plugins</Label>
                                 <PluginManager>
-                                    <button
+                                    <Button
+                                        variant="secondary"
                                         className="settings-action-button"
                                     >
                                         Manage Plugins ({plugins.length})
-                                    </button>
+                                    </Button>
                                 </PluginManager>
                             </div>
                         </div>
