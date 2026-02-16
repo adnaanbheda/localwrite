@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { usePlugin } from '../contexts/PluginContext';
 import { Button } from './retroui/Button';
@@ -9,6 +9,14 @@ import { Switch } from './retroui/Switch';
 export function PluginManager({ children }: { children: React.ReactNode }) {
     const { plugins, enablePlugin, disablePlugin, isPluginEnabled, installPlugin, uninstallPlugin } = usePlugin();
     const [installUrl, setInstallUrl] = useState('');
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const handleInstall = async () => {
         if (!installUrl) return;
@@ -27,7 +35,12 @@ export function PluginManager({ children }: { children: React.ReactNode }) {
             <Popover.Trigger asChild>
                 {children}
             </Popover.Trigger>
-            <Popover.Content className="w-[500px] p-0" align="end" side="left">
+            <Popover.Content
+                className="w-[calc(100vw-2rem)] sm:w-[500px] p-0"
+                align={isMobile ? "center" : "start"}
+                side={isMobile ? "top" : "right"}
+                sideOffset={isMobile ? 15 : 20}
+            >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b-2 border-border bg-muted/20">
                     <div>

@@ -10,7 +10,7 @@ interface SidebarContainerProps {
 
 export function SidebarContainer({ className, children }: SidebarContainerProps) {
     return (
-        <div className={cn("flex flex-col h-full", className)}>
+        <div className={cn("flex flex-col flex-1 min-h-0", className)}>
             {children}
         </div>
     )

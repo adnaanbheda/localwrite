@@ -74,7 +74,7 @@ function FileTreeItem({ item, depth, onSelectFile, currentFile }: {
 
 export function FileExplorer({ items, onSelectFile, onCreateFile, currentFile }: FileExplorerProps) {
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between mb-2 px-2">
                 <h3 className="font-bold text-lg flex items-center gap-2">
                     <FolderOpen className="w-5 h-5" />

@@ -1,4 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
+import { useTheme } from '../components/ThemeProvider';
 import { installPlugin, restoreInstalledPlugins, uninstallPlugin as uninstallPluginFromLoader } from '../lib/plugins/PluginLoader';
 import { pluginManager } from '../lib/plugins/PluginManager';
 import type { Plugin } from '../lib/plugins/types';
@@ -28,6 +29,7 @@ export function PluginProvider({ children }: { children: ReactNode }) {
   const [plugins, setPlugins] = useState<Plugin[]>(pluginManager.getPlugins());
   const [enabledPlugins, setEnabledPlugins] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { setTheme } = useTheme();
 
   // Settings: Record<pluginId, Record<key, value>>
   const [settings, setSettings] = useState<Record<string, Record<string, string>>>({});
@@ -62,7 +64,20 @@ export function PluginProvider({ children }: { children: ReactNode }) {
 
   const enablePlugin = (pluginId: string) => {
     if (!enabledPlugins.includes(pluginId)) {
-      saveEnabledState([...enabledPlugins, pluginId]);
+      const plugin = plugins.find(p => p.id === pluginId);
+
+      let nextEnabled = [...enabledPlugins];
+
+      // If it's a theme, disable all other themes and force light mode
+      if (plugin?.category === 'theme' || pluginId.startsWith('theme-')) {
+        setTheme('light');
+        nextEnabled = nextEnabled.filter(id => {
+          const p = plugins.find(p => p.id === id);
+          return p?.category !== 'theme' && !id.startsWith('theme-');
+        });
+      }
+
+      saveEnabledState([...nextEnabled, pluginId]);
     }
   };
 
